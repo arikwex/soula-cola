@@ -1,7 +1,7 @@
 import { retainTransform } from "./canvas";
 import { TAN } from "./color";
 
-function Arena(cx, cy, dmg, color) {
+function Arena() {
     let anim = 0;
     function render(ctx) {
         ctx.fillStyle = TAN;

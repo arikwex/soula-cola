@@ -171,6 +171,7 @@
       return audioBuffer;
     }
     async function init() {
+      return;
       attackSound = await generate(0.2, (i) => {
         return 0.05 * saw(i / (0.3 - 220 * Math.exp(-i / 500)));
       });
@@ -429,10 +430,12 @@
   var audio_default = Audio;
 
   // src/color.js
-  var TAN = "#EFE4B0";
+  var WHITE = "#FFFFFF";
+  var GRAY = "#444444";
+  var TAN = "#DFD4A0";
 
   // src/arena.js
-  function Arena(cx, cy, dmg, color) {
+  function Arena() {
     let anim = 0;
     function render(ctx2) {
       ctx2.fillStyle = TAN;
@@ -458,9 +461,50 @@
   }
   var arena_default = Arena;
 
+  // src/grim.js
+  function Grim() {
+    let x = 0;
+    let y = 0;
+    let anim = 0;
+    function render(ctx2) {
+      retainTransform(() => {
+        ctx2.translate(x, y);
+        ctx2.fillStyle = WHITE;
+        ctx2.strokeStyle = WHITE;
+        ctx2.lineWidth = 14;
+        ctx2.beginPath();
+        ctx2.moveTo(8, -26);
+        ctx2.lineTo(8, -22);
+        ctx2.stroke();
+        ctx2.fillStyle = GRAY;
+        ctx2.strokeStyle = GRAY;
+        ctx2.lineWidth = 4;
+        ctx2.beginPath();
+        ctx2.moveTo(-7, 0);
+        ctx2.lineTo(-2, -24);
+        ctx2.lineTo(-11, -16);
+        ctx2.bezierCurveTo(-11, -32, -10, -36, 7, -34);
+        ctx2.lineTo(7, 0);
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.stroke();
+      });
+    }
+    function update(dT) {
+      anim += dT * 2;
+    }
+    return {
+      update,
+      render,
+      order: 50
+    };
+  }
+  var grim_default = Grim;
+
   // src/main.js
   function initialize() {
     add(new arena_default());
+    add(new grim_default());
     audio_default().init();
   }
   initialize();

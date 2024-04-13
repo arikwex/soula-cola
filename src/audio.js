@@ -61,6 +61,7 @@ function Audio() {
     }
 
     async function init() {
+        return;
         // Player swipe attack sound
         attackSound = await generate(0.2, (i) => {
             return 0.05 * saw(i/(0.3-220*Math.exp(-i/500)));
