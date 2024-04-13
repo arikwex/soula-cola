@@ -1,0 +1,468 @@
+<html><title>Soula Cola</title><link rel="shortcut icon"/><style>body{overflow:hidden;background:#000;margin:0px;font-family:sans-serif;}h1{color:#fff;text-align:center;margin-top:30px;}img{position:fixed;top:280px;width:600px;left:50%;margin-left:-300px;}h2{color:#666;font-style:italic;text-align:center;}</style><canvas></canvas><script>(() => {
+  // src/bus.js
+  var HANDLES = {};
+  function on(e, handler) {
+    (HANDLES[e] || (HANDLES[e] = [])).push(handler);
+  }
+  function emit(e, data) {
+    (HANDLES[e] || []).map((handler) => handler(data));
+  }
+
+  // src/canvas.js
+  var canvas = document.getElementsByTagName("canvas")[0];
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  window.onresize = () => {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    ctx.imageSmoothingEnabled = false;
+  };
+  var ctx;
+  function retainTransform(fn) {
+    const xfm = ctx.getTransform();
+    fn();
+    ctx.setTransform(xfm);
+  }
+  var favicon = document.createElement("canvas");
+  favicon.width = favicon.height = 64;
+  ctx = favicon.getContext("2d");
+  ctx = canvas.getContext("2d");
+  var link = document.querySelector("link");
+  link.href = favicon.toDataURL();
+  ctx.imageSmoothingEnabled = false;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  // src/tags.js
+  var TAG_CAMERA = 0;
+
+  // src/engine.js
+  var gameObjects = [];
+  var gameObjectsByTag = {};
+  var objectsToRemove = [];
+  var lastFrameMs = 0;
+  function tick(currentFrameMs) {
+    const dT = Math.min((currentFrameMs - lastFrameMs) * 1e-3, 0.018);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    const zoom = Math.min(
+      canvas.width / 1100,
+      canvas.height / 800
+    );
+    ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.6);
+    retainTransform(() => {
+      const camera = getObjectsByTag(TAG_CAMERA)[0];
+      if (camera) {
+        camera.set(ctx);
+      }
+      objectsToRemove.length = 0;
+      gameObjects.map((g) => {
+        if (g.update?.(dT)) {
+          objectsToRemove.push(g);
+        }
+      });
+      if (objectsToRemove.length) {
+        remove(objectsToRemove);
+      }
+      if (camera) {
+        gameObjects.map((g) => {
+          if (g.inView(camera.x, camera.y)) {
+            g.render?.(ctx);
+          }
+        });
+      } else {
+        gameObjects.map((g) => {
+          g.render?.(ctx);
+        });
+      }
+      lastFrameMs = currentFrameMs;
+    });
+    requestAnimationFrame(tick);
+  }
+  function add(obj) {
+    if (!obj.inView) {
+      obj.inView = () => 1;
+    }
+    gameObjects.push(obj);
+    resort();
+    obj.tags?.map((tag) => {
+      gameObjectsByTag[tag] = gameObjectsByTag[tag] ?? [];
+      gameObjectsByTag[tag].push(obj);
+    });
+  }
+  function resort() {
+    gameObjects.sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+  function arrayRemove(list, valuesToEvict) {
+    return list.filter((g) => !valuesToEvict.includes(g));
+  }
+  function remove(objList) {
+    gameObjects = arrayRemove(gameObjects, objList);
+    objList.map((obj) => {
+      obj.tags?.map((tag) => {
+        gameObjectsByTag[tag] = arrayRemove(gameObjectsByTag[tag], [obj]);
+      });
+    });
+  }
+  function getObjectsByTag(tag) {
+    return gameObjectsByTag[tag] || [];
+  }
+  requestAnimationFrame(tick);
+
+  // src/events.js
+  var SIGIL_DRAWN = 0;
+  var RUNESTONE_MOVE = 1;
+  var POWERUP_ACQUIRED = 2;
+  var RUNESTONE_LAND = 3;
+  var ENEMY_DAMAGE = 6;
+  var ENEMY_BONK = 7;
+  var ABILITY_BEAT = 8;
+  var ENEMY_TAKE_DAMAGE = 9;
+  var ENEMY_MOVE = 10;
+
+  // src/audio.js
+  function clamp(v, a, b) {
+    return Math.min(Math.max(v, a), b);
+  }
+  function Audio() {
+    audioCtx = new AudioContext();
+    sampleRate = audioCtx.sampleRate;
+    let attackHitSound;
+    let runestoneLandedSound;
+    let runestoneMoveSound;
+    let powerupCollectSound;
+    let enemyMoveSound;
+    let enemySwordSound;
+    let fireSound;
+    let iceSound;
+    let zapSound;
+    let sigilCaret;
+    let sigilCircle;
+    let sigilBolt;
+    let sigilTriangle;
+    let sigilWave;
+    let sigilHourglass;
+    let sigilGarbage;
+    let musicBuffer;
+    let activeMusicSource;
+    let gainNodeA;
+    let gainNodeB;
+    let usingA = true;
+    const sin = (i) => Math.sin(i);
+    const saw = (i) => (i % 6.28 - 3.14) / 6.28;
+    const sqr = (i) => clamp(Math.sin(i) * 1e3, -1, 1);
+    async function _yield() {
+      return new Promise((r) => setTimeout(r, 0));
+    }
+    function setProgress(p) {
+      emit("load-progress", p);
+    }
+    async function generate(duration, fn) {
+      let audioBuffer = audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
+      let buffer = audioBuffer.getChannelData(0);
+      let N = audioBuffer.length;
+      for (let i = 0; i < N; i++) {
+        buffer[i] = fn(i * 44100 / sampleRate) * (1 - i / N);
+      }
+      await _yield();
+      return audioBuffer;
+    }
+    async function init() {
+      attackSound = await generate(0.2, (i) => {
+        return 0.05 * saw(i / (0.3 - 220 * Math.exp(-i / 500)));
+      });
+      attackHitSound = await generate(0.2, (i) => {
+        return 0.15 * (sin(i / (20 + i / 150)) * 0.3 + Math.random());
+      });
+      enemySwordSound = await generate(0.2, (i) => {
+        return 0.07 * saw(i / (0.3 - 220 * Math.exp(-i / 500)));
+      });
+      runestoneLandedSound = await generate(0.25, (i) => {
+        return 0.1 * (sqr(i / (120 + i / 250)) * 0.3 + Math.random()) * (sqr(i / 600) * 0.5 + 0.5);
+      });
+      runestoneMoveSound = await generate(0.1, (i) => {
+        return 0.1 * sqr(i / (20 + 150 * Math.exp(-i / 1600)));
+      });
+      enemyMoveSound = await generate(0.3, (i) => {
+        return 0.06 * (sin(i / (14 + i * i / 1e6)) + Math.random() / 2);
+      });
+      powerupCollectSound = await generate(0.3, (i) => {
+        return 0.08 * sin(i / (100 - i / 20));
+      });
+      fireSound = await generate(0.4, (i) => {
+        return 0.16 * Math.random();
+      });
+      iceSound = await generate(0.4, (i) => {
+        return 0.11 * (sqr(i / (30 + i / 500)) * (sqr(i / (1500 + i / 60)) * 0.5 + 0.5) * (sqr(i / (600 + i / 40)) * 0.5 + 0.5));
+      });
+      zapSound = await generate(0.5, (i) => {
+        return 0.15 * (saw(i / (3 + i / 250)) + Math.random() * 0.1);
+      });
+      function sigilNote(i, pitch, time) {
+        const q = Math.pow(2, -pitch / 12) * 18;
+        return 0.1 * (saw(i / q) * sin(i / (q * 2 + 3 * sin(i / 2e5)))) * (i / 44100 - time > 0 ? 1 : 0) * Math.exp(-(i / 44100 - time) * 7);
+      }
+      sigilCaret = await generate(2, (i) => {
+        return sigilNote(i, 0, 0) + sigilNote(i, 7, 0.15) + sigilNote(i, 0, 0.3);
+      });
+      sigilCircle = await generate(2, (i) => {
+        return sigilNote(i, 2, 0) + sigilNote(i, 3, 0.15) + sigilNote(i, 5, 0.3);
+      });
+      sigilBolt = await generate(2, (i) => {
+        return sigilNote(i, 12, 0) + sigilNote(i, 6, 0.15) + sigilNote(i, 0, 0.3);
+      });
+      sigilTriangle = await generate(2, (i) => {
+        return sigilNote(i, 10, 0) + sigilNote(i, 10, 0.15) + sigilNote(i, 3, 0.3);
+      });
+      sigilWave = await generate(2, (i) => {
+        return sigilNote(i, 5, 0) + sigilNote(i, 4, 0.15) + sigilNote(i, 5, 0.3);
+      });
+      sigilHourglass = await generate(2, (i) => {
+        return sigilNote(i, 8, 0) + sigilNote(i, 1, 0.15) + sigilNote(i, 4, 0.3);
+      });
+      sigilGarbage = await generate(2, (i) => {
+        return sigilNote(i, -4, 0) + sigilNote(i, -10, 0.15) + sigilNote(i, -4, 0.3);
+      });
+      const pace = sampleRate * 0.82;
+      const drumMusicBuffer = audioCtx.createBuffer(1, pace, sampleRate);
+      const drumBuffer2 = drumMusicBuffer.getChannelData(0);
+      const W = 0.1 * sampleRate;
+      for (let j = 0; j < W; j++) {
+        drumBuffer2[j] += 0.06 * (sin(j / (70 + j / 300)) + Math.random() / 3) * (1 - j / W);
+        drumBuffer2[parseInt(0.25 * pace) + j] += 0.02 * (saw(j / (80 - j / 2e3)) + Math.random() / 3) * (1 - j / W);
+        drumBuffer2[parseInt(0.5 * pace) + j] += 0.06 * Math.random() * (1 - j / W) + 0.06 * (sin(j / (70 + j / 300)) + Math.random() / 3) * (1 - j / W);
+        drumBuffer2[parseInt(0.75 * pace) + j] += 0.02 * (saw(j / (80 - j / 2e3)) + Math.random() / 3) * (1 - j / W);
+      }
+      await _yield();
+      function bassNote(j, pitch) {
+        const p = Math.pow(2, -pitch / 12) * 80;
+        return 0.25 * sin(j / (p + j / 9e3)) * (1 - j / U);
+      }
+      const bassMusicBuffer = audioCtx.createBuffer(1, 16 * pace, sampleRate);
+      const bassBuffer = bassMusicBuffer.getChannelData(0);
+      const U = 0.25 * sampleRate;
+      const bs = pace * 0.25;
+      for (let o = 0; o < 4; o++) {
+        const os = o * bs * 16;
+        const br = [0, -5, -2, -7][o];
+        for (let j = 0; j < U; j++) {
+          bassBuffer[j + os] += bassNote(j, 0 + br);
+          bassBuffer[j + bs * 3 + os] += bassNote(j, 5 + br);
+          bassBuffer[j + bs * 4 + os] += bassNote(j, 7 + br);
+          bassBuffer[j + bs * 5 + os] += bassNote(j, 10 + br);
+          bassBuffer[j + bs * 7 + os] += bassNote(j, 12 + br);
+          bassBuffer[j + bs * 9 + os] += bassNote(j, 12 + br);
+          bassBuffer[j + bs * 10 + os] += bassNote(j, 10 + br);
+          bassBuffer[j + bs * 11 + os] += bassNote(j, 7 + br);
+          bassBuffer[j + bs * 12 + os] += bassNote(j, 12 + br);
+          bassBuffer[j + bs * 14 + os] += bassNote(j, 10 + br);
+        }
+      }
+      await _yield();
+      function chordNote(j, pitch) {
+        const p = Math.pow(2, -pitch / 12) * 20;
+        return 0.04 * sin(j / (p + Math.exp(-j / U * 4) * 5)) * clamp(1 - j / (U * 12), 0, 1) * Math.pow(sin(j / 1550) * 0.5 + 0.5, 3);
+      }
+      const chordMusicBuffer = audioCtx.createBuffer(1, 16 * pace, sampleRate);
+      const chordBuffer = chordMusicBuffer.getChannelData(0);
+      for (let o = 0; o < 4; o++) {
+        const os = o * bs * 16;
+        const cr = [[-2, 3, 7], [-2, 2, 7], [-2, 2, 5], [-4, 0, 3]][o];
+        for (let j = 0; j < U * 12; j++) {
+          chordBuffer[j + os] += chordNote(j, cr[0]);
+          chordBuffer[j + os] += chordNote(j, cr[1]);
+          chordBuffer[j + os] += chordNote(j, cr[2]);
+        }
+      }
+      await _yield();
+      function leadNote(j, pitch) {
+        const p = Math.pow(2, -pitch / 12) * 20;
+        return 0.034 * saw(j / (p + sin(j / 1e3) * 0.01)) * (1 - j / (U * 2));
+      }
+      const leadMusicBuffer = audioCtx.createBuffer(1, 16 * pace, sampleRate);
+      const leadBuffer = leadMusicBuffer.getChannelData(0);
+      for (let j = 0; j < U * 2; j++) {
+        leadBuffer[j] += leadNote(j, 7);
+        leadBuffer[j + bs * 3] += leadNote(j, 0);
+        leadBuffer[j + bs * 6] += leadNote(j, 3);
+        leadBuffer[j + bs * 7] += leadNote(j, 5);
+        leadBuffer[j + bs * 8] += leadNote(j, 7);
+        leadBuffer[j + bs * 11] += leadNote(j, 0);
+        leadBuffer[j + bs * 14] += leadNote(j, 3);
+        leadBuffer[j + bs * 15] += leadNote(j, 5);
+        leadBuffer[j + bs * 16] += leadNote(j, 2);
+        leadBuffer[j + bs * 32] += leadNote(j, 5);
+        leadBuffer[j + bs * (3 + 32)] += leadNote(j, -2);
+        leadBuffer[j + bs * (6 + 32)] += leadNote(j, 2);
+        leadBuffer[j + bs * (7 + 32)] += leadNote(j, 3);
+        leadBuffer[j + bs * (8 + 32)] += leadNote(j, 5);
+        leadBuffer[j + bs * (11 + 32)] += leadNote(j, -2);
+        leadBuffer[j + bs * (14 + 32)] += leadNote(j, 3);
+        leadBuffer[j + bs * (15 + 32)] += leadNote(j, 2);
+        leadBuffer[j + bs * (16 + 32)] += leadNote(j, 0);
+      }
+      await _yield();
+      musicBuffer = audioCtx.createBuffer(1, 8 * 4 * pace, sampleRate);
+      const outBuffer = musicBuffer.getChannelData(0);
+      for (let i = 0; i < outBuffer.length; i++) {
+        outBuffer[i] += drumBuffer2[i % drumBuffer2.length];
+        outBuffer[i] += bassBuffer[i % bassBuffer.length];
+        outBuffer[i] += chordBuffer[i % chordBuffer.length];
+        outBuffer[i] += leadBuffer[i % leadBuffer.length];
+      }
+      on(ENEMY_BONK, play(attackHitSound));
+      on(ENEMY_TAKE_DAMAGE, play(attackHitSound));
+      on(RUNESTONE_MOVE, play(runestoneMoveSound));
+      on(RUNESTONE_LAND, play(runestoneLandedSound));
+      on(POWERUP_ACQUIRED, play(powerupCollectSound));
+      on(ENEMY_MOVE, play(enemyMoveSound));
+      on(ENEMY_DAMAGE, play(enemySwordSound));
+      on(ABILITY_BEAT, (t) => {
+        play({
+          0: fireSound,
+          1: iceSound,
+          2: zapSound
+        }[t])();
+      });
+      on(SIGIL_DRAWN, ([type, dir]) => {
+        play({
+          0: sigilGarbage,
+          5: sigilCaret,
+          1: sigilCircle,
+          3: sigilBolt,
+          2: sigilTriangle,
+          4: sigilWave,
+          6: sigilHourglass
+        }[type])();
+      });
+      gainNodeA = new GainNode(audioCtx);
+      gainNodeA.connect(audioCtx.destination);
+      gainNodeB = new GainNode(audioCtx);
+      gainNodeB.connect(audioCtx.destination);
+      music(musicBuffer);
+    }
+    async function genericSongBuilder([melodySignature, beat], seed, prog1, prog2) {
+      const song = [];
+      const drums = [];
+      const noteLength = [4, 2, 0.5, 3, 4][seed];
+      const noteSpace = [1, 0.5, 0.25, 2, 2][seed++];
+      const bassNotes = [-15, -20, -19, -12];
+      drums.push(
+        [seed * seed * 3 * 0.5 % 2, seed % 2],
+        [(seed * seed * 3 + seed * 9) * 0.5 % 2, (seed + 1) % 2],
+        [(seed * seed * 2 + seed * 11) * 0.5 % 2, (seed + 1) % 2]
+      );
+      setProgress(prog1);
+      for (let i = 0; i < 3; i++) {
+        const o = i * 8;
+        const q = [0, 3, -5][i];
+        for (let j = 0; j < 8; j++) {
+          song.push([bassNotes[(seed * 7 + i * 2 + (j >> 1) + j * j * 3) % 4] + q, j + o, 6, 1]);
+        }
+        for (let j = 0; j < 8 / noteSpace; j++) {
+          if ((j + j * j + i + seed * 3) % 7 < 4) {
+            song.push([-3 + q + melodySignature[(j + j * j * 2 + i * i * 2 + seed) % melodySignature.length], j * noteSpace + o, noteLength, 2]);
+          }
+        }
+      }
+      const targetBuffer = audioCtx.createBuffer(1, sampleRate * 8 * 3 * beat, sampleRate);
+      const buffer = targetBuffer.getChannelData(0);
+      for (let i = 0; i < song.length; i++) {
+        let note, start, duration, amp;
+        [note, start, duration, amp] = song[i];
+        const baseIdx = parseInt(start * beat * sampleRate);
+        const dur = duration * beat * sampleRate;
+        for (let i2 = 0; i2 < dur; i2++) {
+          let v = 0;
+          const envelope = i2 / dur;
+          v += amp == 1 ? clamp(sin(i2 / (6 * 2 ** (-note / 12) * 2 * 2) + sin(i2 / 8e3)) * (Math.exp(-envelope * 23) * 44 + 1), -1, 1) * 2 : saw(i2 / (4.03 * 6 * 2 ** (-note / 12) * 2)) * 7;
+          buffer[baseIdx + i2] += v * Math.min(envelope * Math.exp(-envelope * (10 + amp * 7)) * 100, 1) / 500;
+        }
+        await _yield();
+        setProgress(prog1 + (prog2 - prog1) * (i / song.length) * 0.8);
+      }
+      for (let q = 0; q < 44; q += 2) {
+        for (let j = 0; j < drums.length; j++) {
+          let type, drumStart;
+          [drumStart, type] = drums[j];
+          const noteOffset = parseInt(0.5 * sampleRate * type);
+          const startOffset = parseInt((drumStart + q) * sampleRate * beat);
+          for (let k = 0; k < sampleRate * 0.1; k++) {
+            buffer[k + startOffset] += drumBuffer[k + noteOffset];
+          }
+        }
+        await _yield();
+        setProgress(prog1 + (prog2 - prog1) * (0.8 + 0.2 * (q / 44)));
+      }
+      return targetBuffer;
+    }
+    function play(audioBuffer) {
+      return () => {
+        let source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioCtx.destination);
+        source.start();
+      };
+    }
+    ;
+    function music(musicBuffer2) {
+      let audioToStop = activeMusicSource;
+      activeMusicSource = audioCtx.createBufferSource();
+      activeMusicSource.buffer = musicBuffer2;
+      activeMusicSource.loop = true;
+      activeMusicSource.connect(usingA ? gainNodeA : gainNodeB);
+      activeMusicSource.start();
+      setTimeout(() => {
+        audioToStop?.stop();
+      }, 700);
+      gainNodeA.gain.setTargetAtTime(usingA ? 1 : 0, audioCtx.currentTime, 0.5);
+      gainNodeB.gain.setTargetAtTime(usingA ? 0 : 1, audioCtx.currentTime, 0.5);
+      usingA = !usingA;
+    }
+    return {
+      init
+    };
+  }
+  var audio_default = Audio;
+
+  // src/color.js
+  var TERRAIN = "#EFE4B0";
+
+  // src/arena.js
+  function Arena(cx, cy, dmg, color) {
+    let anim = 0;
+    function render(ctx2) {
+      ctx2.fillStyle = TERRAIN;
+      ctx2.beginPath();
+      for (let a = 0; a < Math.PI * 2; a += 0.05) {
+        const R = 490 * (1 + Math.cos(a * 5 + anim * 0.3) * 0.03 + Math.cos(a * 9 - anim * 0.5) * 0.02 + +Math.cos(a * 17 + anim * 0.9) * 0.01 + Math.cos(a * 4 + 3) * 0.02);
+        if (a == 0) {
+          ctx2.moveTo(Math.cos(a) * R, Math.sin(a) * R * 0.57);
+        } else {
+          ctx2.lineTo(Math.cos(a) * R, Math.sin(a) * R * 0.57);
+        }
+      }
+      ctx2.fill();
+    }
+    function update(dT) {
+      anim += dT * 2;
+    }
+    return {
+      update,
+      render,
+      order: -1e3
+    };
+  }
+  var arena_default = Arena;
+
+  // src/main.js
+  function initialize() {
+    add(new arena_default());
+    audio_default().init();
+  }
+  initialize();
+})();
+</script>
