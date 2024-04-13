@@ -52,7 +52,7 @@
       canvas.width / 1100,
       canvas.height / 800
     );
-    ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.6);
+    ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
     retainTransform(() => {
       const camera = getObjectsByTag(TAG_CAMERA)[0];
       if (camera) {
@@ -429,20 +429,20 @@
   var audio_default = Audio;
 
   // src/color.js
-  var TERRAIN = "#EFE4B0";
+  var TAN = "#EFE4B0";
 
   // src/arena.js
   function Arena(cx, cy, dmg, color) {
     let anim = 0;
     function render(ctx2) {
-      ctx2.fillStyle = TERRAIN;
+      ctx2.fillStyle = TAN;
       ctx2.beginPath();
       for (let a = 0; a < Math.PI * 2; a += 0.05) {
         const R = 490 * (1 + Math.cos(a * 5 + anim * 0.3) * 0.03 + Math.cos(a * 9 - anim * 0.5) * 0.02 + +Math.cos(a * 17 + anim * 0.9) * 0.01 + Math.cos(a * 4 + 3) * 0.02);
         if (a == 0) {
-          ctx2.moveTo(Math.cos(a) * R, Math.sin(a) * R * 0.57);
+          ctx2.moveTo(Math.cos(a) * R, Math.sin(a) * R * 0.6);
         } else {
-          ctx2.lineTo(Math.cos(a) * R, Math.sin(a) * R * 0.57);
+          ctx2.lineTo(Math.cos(a) * R, Math.sin(a) * R * 0.6);
         }
       }
       ctx2.fill();
