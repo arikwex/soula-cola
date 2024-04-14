@@ -9,7 +9,7 @@ function Soul(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 70 + Math.random() * 40;
+    let SPEED = 90 + Math.random() * 40;
     
     let HEIGHT = 0.9 + Math.random() * 1.0; // 0.9 - 1.9
     let WIDTH = 0.9 + Math.random() * 0.4; // 0.9 - 1.3
@@ -220,7 +220,7 @@ function Soul(x, y) {
 
         // Motion
         const M = Math.sqrt(tx*tx + ty*ty);
-        if (M > 55) {
+        if (M > 40) {
             tx *= SPEED / M;
             ty *= SPEED / M;
             vx += (tx - vx) * 3.0 * dT;
@@ -262,6 +262,7 @@ function Soul(x, y) {
             if (hunger > 2) {
                 add(new PoofParticle(x, y-20*HEIGHT/2));
                 setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);
+                bus.emit('exploded');
                 return true;
             }
         }
@@ -310,6 +311,7 @@ function Soul(x, y) {
     function onConsume({ gateway, emote }) {
         if (activeGateway == gateway && desiredEmote == emote) {
             remove([self]);
+            bus.emit('consume-success');
         }
     }
 

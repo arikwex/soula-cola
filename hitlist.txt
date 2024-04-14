@@ -1,11 +1,10 @@
 HITLIST
 =======
-- Controlled randomness
 - Freed spirit counter
 - Exploded spirit counter
 - Drink Soula Cola to summon a bunch of souls
 - THE Soda Animation
-- Soul manager behavior / level layout to match soda type
+- Soul manager behavior / level progress / layout to match soda type
 - Audio + Music
 - Visual for mis-type
 - "meep meep meep" in desperation for their desires

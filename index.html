@@ -445,7 +445,9 @@
   var RED = "#ED1C24";
   var ORANGE = "#FFC90E";
   var GREEN = "#22B14C";
+  var BLUE = "#00A2E8";
   var TEAL = "#99D9EA";
+  var DARK_BLUE = "#3F48CC";
   var PURPLE = "#A349A4";
 
   // src/arena.js
@@ -717,7 +719,7 @@
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 70 + Math.random() * 40;
+    let SPEED = 90 + Math.random() * 40;
     let HEIGHT = 0.9 + Math.random() * 1;
     let WIDTH = 0.9 + Math.random() * 0.4;
     let FACE_HEIGHT = Math.random() * 8;
@@ -900,7 +902,7 @@
         ty = grim.getY() - y;
       }
       const M = Math.sqrt(tx * tx + ty * ty);
-      if (M > 55) {
+      if (M > 40) {
         tx *= SPEED / M;
         ty *= SPEED / M;
         vx += (tx - vx) * 3 * dT;
@@ -936,6 +938,7 @@
           setTimeout(() => {
             add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
           }, Math.random() * 100 + 50);
+          emit("exploded");
           return true;
         }
       }
@@ -981,6 +984,7 @@
     function onConsume({ gateway, emote }) {
       if (activeGateway == gateway && desiredEmote == emote) {
         remove([self]);
+        emit("consume-success");
       }
     }
     on("assign-emote", onAssignEmote);
@@ -1461,13 +1465,104 @@
   }
   var interaction_default = Interaction;
 
+  // src/hud.js
+  function HUD(cx, cy, emote) {
+    let freed = 0;
+    let allowance = 5;
+    function render(ctx2) {
+      retainTransform(() => {
+        ctx2.setTransform(1, 0, 0, 1, 50, 70);
+        renderSoul(ctx2);
+        ctx2.font = "32px monospace";
+        ctx2.fillStyle = WHITE;
+        ctx2.fillText(`${freed}`, 23, -13);
+        ctx2.setTransform(1, 0, 0, 1, 50, 110);
+        renderAllowance(ctx2);
+        ctx2.font = "32px monospace";
+        ctx2.fillStyle = WHITE;
+        ctx2.fillText(`${allowance}`, 23, 3);
+      });
+    }
+    function renderAllowance(ctx2) {
+      ctx2.strokeStyle = RED;
+      ctx2.lineWidth = 10;
+      ctx2.beginPath();
+      ctx2.moveTo(-6, -6);
+      ctx2.lineTo(6, 6);
+      ctx2.moveTo(-6, 6);
+      ctx2.lineTo(6, -6);
+      ctx2.closePath();
+      ctx2.stroke();
+    }
+    function renderSoul(ctx2) {
+      ctx2.fillStyle = DARK_BLUE;
+      ctx2.strokeStyle = DARK_BLUE;
+      ctx2.lineWidth = 16;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -5);
+      ctx2.lineTo(0, -20);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.lineWidth = 18;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 - 7);
+      ctx2.lineTo(0, -20 - 2);
+      ctx2.stroke();
+      ctx2.strokeStyle = DARK_BLUE;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.moveTo(6, -20 - 11);
+      ctx2.lineTo(7, -20 - 16);
+      ctx2.moveTo(-6, -20 - 11);
+      ctx2.lineTo(-7, -20 - 16);
+      ctx2.stroke();
+      ctx2.strokeStyle = BLUE;
+      ctx2.lineWidth = 14;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 - 6);
+      ctx2.lineTo(0, -20 - 2);
+      ctx2.stroke();
+      ctx2.strokeStyle = WHITE;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.moveTo(-3, -20 - 5);
+      ctx2.lineTo(-3, -20 - 5);
+      ctx2.moveTo(3, -20 - 5);
+      ctx2.lineTo(3, -20 - 5);
+      ctx2.stroke();
+    }
+    function update(dT) {
+    }
+    function onConsumeSuccess() {
+      freed += 1;
+    }
+    function onExploded() {
+      allowance = Math.max(allowance - 1, 0);
+    }
+    on("consume-success", onConsumeSuccess);
+    on("exploded", onExploded);
+    function onRemove() {
+      off("consume-success", onConsumeSuccess);
+      off("exploded", onExploded);
+    }
+    return {
+      update,
+      render,
+      onRemove,
+      order: 99999
+    };
+  }
+  var hud_default = HUD;
+
   // src/main.js
   function initialize() {
+    add(new hud_default());
     add(new arena_default());
     add(new soul_manager_default());
     add(new interaction_default());
     add(new grim_default(0, 0));
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 5; i++) {
       add(new soul_default(-50 - 15 * i, Math.cos(i * 2) * 20));
     }
     audio_default().init();
