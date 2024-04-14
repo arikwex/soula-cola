@@ -442,6 +442,8 @@
   var LIGHT_GRAY = "#C3C3C3";
   var DARK_RED = "#880015";
   var BROWN = "#B97A57";
+  var ORANGE = "#FFC90E";
+  var GREEN = "#22B14C";
   var TEAL = "#99D9EA";
   var PURPLE = "#A349A4";
 
@@ -707,6 +709,7 @@
     let desiredEmote = null;
     let hunger = 0;
     let hungerAnim = Math.random() * 100;
+    let activeGateway = null;
     function getFadeFactor() {
       return 1 - Math.max(hunger - 1, 0);
     }
@@ -715,6 +718,11 @@
       let R = 0;
       let G = 162;
       let B = 232;
+      if (activeGateway != null) {
+        R = 255;
+        G = 255;
+        B = 230;
+      }
       let A = 1;
       R = R * q + 200 * (1 - q);
       G = G * q + 200 * (1 - q);
@@ -727,6 +735,11 @@
       let R = 63;
       let G = 72;
       let B = 204;
+      if (activeGateway != null) {
+        R = 255;
+        G = 230;
+        B = 170;
+      }
       let A = 1;
       R = R * q + 200 * (1 - q);
       G = G * q + 200 * (1 - q);
@@ -745,7 +758,11 @@
         ctx2.moveTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT - s * 0.7 - 6);
         ctx2.lineTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT + s * 0.7 - 2 + FACE_HEIGHT);
         ctx2.stroke();
-        ctx2.strokeStyle = WHITE;
+        if (activeGateway != null) {
+          ctx2.strokeStyle = BLACK;
+        } else {
+          ctx2.strokeStyle = WHITE;
+        }
         ctx2.lineWidth = 3 * wd / 14;
         ctx2.beginPath();
         ctx2.moveTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
@@ -823,7 +840,7 @@
       ctx2.stroke();
     }
     function renderWaveEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(163,217,234,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
       ctx2.lineWidth = 3;
       ctx2.beginPath();
       ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
@@ -889,6 +906,15 @@
             add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
           }, Math.random() * 100 + 50);
           return true;
+        }
+      }
+      const gateways = getObjectsByTag("gateway");
+      activeGateway = null;
+      for (let i = 0; i < gateways.length; i++) {
+        if (gateways[i].inRegion(x, y)) {
+          activeGateway = gateways[i];
+          activeGateway.refreshActive();
+          break;
         }
       }
       self.order = 50 + y / 100;
@@ -1007,6 +1033,7 @@
 
   // src/gateway.js
   function Gateway(cx, cy, emote) {
+    let activeTimer = 0;
     function render(ctx2) {
       retainTransform(() => {
         ctx2.lineWidth = 5;
@@ -1018,7 +1045,18 @@
           renderCircleEmote(ctx2);
         if (emote == EMOTE.WAVE)
           renderWaveEmote(ctx2);
-        ctx2.strokeStyle = LIGHT_GRAY;
+        if (activeTimer > 0) {
+          if (emote == EMOTE.TRIANGLE)
+            ctx2.strokeStyle = ORANGE;
+          if (emote == EMOTE.YOTA)
+            ctx2.strokeStyle = GREEN;
+          if (emote == EMOTE.CIRCLE)
+            ctx2.strokeStyle = RED;
+          if (emote == EMOTE.WAVE)
+            ctx2.strokeStyle = PURPLE;
+        } else {
+          ctx2.strokeStyle = LIGHT_GRAY;
+        }
         ctx2.beginPath();
         for (let i = 0; i < 6; i++) {
           const dx = Math.cos(i / 6 * 6.28) * 70;
@@ -1035,7 +1073,7 @@
       });
     }
     function renderTriangleEmote(ctx2) {
-      ctx2.strokeStyle = `rgba(255,192,14,${1})`;
+      ctx2.strokeStyle = ORANGE;
       ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.moveTo(cx + 0, cy - 24);
@@ -1045,7 +1083,7 @@
       ctx2.stroke();
     }
     function renderYotaEmote(ctx2) {
-      ctx2.strokeStyle = `rgba(34,200,15,${1})`;
+      ctx2.strokeStyle = GREEN;
       ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.moveTo(cx, cy + 23);
@@ -1055,7 +1093,7 @@
       ctx2.stroke();
     }
     function renderCircleEmote(ctx2) {
-      ctx2.strokeStyle = `rgba(237,28,38,${1})`;
+      ctx2.strokeStyle = RED;
       ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.ellipse(cx, cy, 33, 21, 0, 0, 2 * Math.PI);
@@ -1074,10 +1112,22 @@
       ctx2.stroke();
     }
     function update(dT) {
+      activeTimer -= dT;
+    }
+    function inRegion(tx, ty) {
+      const dx = tx - cx;
+      const dy = ty - cy;
+      return dx * dx + dy * dy * 2 < 60 * 60;
+    }
+    function refreshActive() {
+      activeTimer = 0.2;
     }
     return {
       update,
       render,
+      inRegion,
+      refreshActive,
+      tags: ["gateway"],
       order: -200
     };
   }

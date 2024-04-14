@@ -1,8 +1,9 @@
 import { retainTransform } from "./canvas";
-import { BLUE, GRAY, LIGHT_GRAY, PURPLE } from "./color";
+import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, TAN, WHITE, YELLOW } from "./color";
 import { EMOTE } from "./emote-enum";
 
 function Gateway(cx, cy, emote) {
+    let activeTimer = 0;
 
     function render(ctx) {
         retainTransform(() => {
@@ -13,7 +14,14 @@ function Gateway(cx, cy, emote) {
             if (emote == EMOTE.CIRCLE) renderCircleEmote(ctx);
             if (emote == EMOTE.WAVE) renderWaveEmote(ctx);
 
-            ctx.strokeStyle = LIGHT_GRAY;
+            if (activeTimer > 0) {
+                if (emote == EMOTE.TRIANGLE) ctx.strokeStyle = ORANGE;
+                if (emote == EMOTE.YOTA) ctx.strokeStyle = GREEN;
+                if (emote == EMOTE.CIRCLE) ctx.strokeStyle = RED;
+                if (emote == EMOTE.WAVE) ctx.strokeStyle = PURPLE;
+            } else {
+                ctx.strokeStyle = LIGHT_GRAY;
+            }
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const dx = Math.cos(i/6*6.28) * 70;
@@ -29,7 +37,7 @@ function Gateway(cx, cy, emote) {
     }
 
     function renderTriangleEmote(ctx) {
-        ctx.strokeStyle = `rgba(255,192,14,${1})`;
+        ctx.strokeStyle = ORANGE;
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(cx + 0, cy - 24);
@@ -40,7 +48,7 @@ function Gateway(cx, cy, emote) {
     }
 
     function renderYotaEmote(ctx) {
-        ctx.strokeStyle = `rgba(34,200,15,${1})`;
+        ctx.strokeStyle = GREEN;
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(cx, cy + 23);
@@ -51,7 +59,7 @@ function Gateway(cx, cy, emote) {
     }
 
     function renderCircleEmote(ctx) {
-        ctx.strokeStyle = `rgba(237,28,38,${1})`;
+        ctx.strokeStyle = RED;
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.ellipse(cx, cy, 33, 21, 0, 0, 2 * Math.PI);
@@ -61,7 +69,7 @@ function Gateway(cx, cy, emote) {
     }
 
     function renderWaveEmote(ctx, dy) {
-        ctx.strokeStyle = PURPLE; //`rgba(163,217,234,${1})`;
+        ctx.strokeStyle = PURPLE;
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(cx - 45, cy - 10);
@@ -72,11 +80,25 @@ function Gateway(cx, cy, emote) {
     }
 
     function update(dT) {
+        activeTimer -= dT;
+    }
+
+    function inRegion(tx, ty) {
+        const dx = tx - cx;
+        const dy = ty - cy;
+        return dx * dx + (dy * dy) * 2 < 60 * 60;
+    }
+
+    function refreshActive() {
+        activeTimer = 0.2;
     }
 
     return {
         update,
         render,
+        inRegion,
+        refreshActive,
+        tags: ['gateway'],
         order: -200,
     };
 }

@@ -1,6 +1,7 @@
 HITLIST
 =======
 - Objective portals
+    - When in gateway region, become "active"
     - type full words / in theme / longer for challenge
 - Out of bounds / squashed radial limit
 - Drink Soula Cola to summon a bunch of souls

@@ -1,6 +1,6 @@
 import * as bus from './bus';
 import { retainTransform } from "./canvas";
-import { WHITE } from "./color";
+import { BLACK, WHITE } from "./color";
 import { EMOTE } from "./emote-enum";
 import { add, getObjectsByTag } from "./engine";
 import PoofParticle from './poof-particle';
@@ -24,6 +24,8 @@ function Soul(x, y) {
     let hunger = 0;
     let hungerAnim = Math.random() * 100;
 
+    let activeGateway = null;
+
     function getFadeFactor() {
         return (1-Math.max(hunger - 1, 0));
     }
@@ -34,6 +36,11 @@ function Soul(x, y) {
         let R = 0;
         let G = 162;
         let B = 232;
+        if (activeGateway != null) {
+            R = 255;
+            G = 255;
+            B = 230;
+        }
         let A = 1;
         R = R * q + 200 * (1-q);
         G = G * q + 200 * (1-q);
@@ -48,6 +55,11 @@ function Soul(x, y) {
         let R = 63;
         let G = 72;
         let B = 204;
+        if (activeGateway != null) {
+            R = 255;
+            G = 230;
+            B = 170;
+        }
         let A = 1;
         R = R * q + 200 * (1-q);
         G = G * q + 200 * (1-q);
@@ -70,7 +82,11 @@ function Soul(x, y) {
             ctx.stroke();
 
             // Eyes
-            ctx.strokeStyle = WHITE;
+            if (activeGateway != null) {
+                ctx.strokeStyle = BLACK;
+            } else {
+                ctx.strokeStyle = WHITE;
+            }
             ctx.lineWidth = 3 * wd / 14.0;
             ctx.beginPath();
             ctx.moveTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
@@ -155,8 +171,8 @@ function Soul(x, y) {
     }
 
     function renderWaveEmote(ctx, dy) {
-        // ctx.strokeStyle = TEAL; // 99D9EA
-        ctx.strokeStyle = `rgba(163,217,234,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        //A349A4
+        ctx.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(-7, -20 * HEIGHT - 29-3+dy);
@@ -236,6 +252,17 @@ function Soul(x, y) {
                 add(new PoofParticle(x, y-20*HEIGHT/2));
                 setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);
                 return true;
+            }
+        }
+
+        // Gateways
+        const gateways = getObjectsByTag('gateway');
+        activeGateway = null;
+        for (let i = 0; i < gateways.length; i++) {
+            if (gateways[i].inRegion(x, y)) {
+                activeGateway = gateways[i];
+                activeGateway.refreshActive();
+                break;
             }
         }
 
