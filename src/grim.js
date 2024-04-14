@@ -70,6 +70,10 @@ function Grim() {
         if (S > 0) {
             renderBlade(ctx, C, S, H);
         }
+        if (C >= 0) {
+            renderArm(ctx, C, S, H);
+        }
+
         ctx.fillStyle = DARK_RED;
         ctx.strokeStyle = DARK_RED;
         ctx.lineWidth = 5;
@@ -81,17 +85,19 @@ function Grim() {
         if (S <= 0) {
             renderBlade(ctx, C, S, H);
         }
-
-        // Arm holding scythe
-        if (C < 0.8) {
-            ctx.fillStyle = BLACK;
-            ctx.strokeStyle = BLACK;
-            ctx.lineWidth = 6;
-            ctx.beginPath();
-            ctx.moveTo(9 * S - 2 * C, -12 + H);
-            ctx.lineTo(6 * S - 2 * C, -13 + H);
-            ctx.stroke();
+        if (C < 0) {
+            renderArm(ctx, C, S, H);
         }
+    }
+
+    function renderArm(ctx, C, S, H) {
+        ctx.fillStyle = BLACK;
+        ctx.strokeStyle = BLACK;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(9 * S - 2 * C, -12 + H);
+        ctx.lineTo(6 * S - 2 * C, -13 + H);
+        ctx.stroke();
     }
 
     function render(ctx) {

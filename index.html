@@ -524,6 +524,9 @@
       if (S > 0) {
         renderBlade(ctx2, C, S, H);
       }
+      if (C >= 0) {
+        renderArm(ctx2, C, S, H);
+      }
       ctx2.fillStyle = DARK_RED;
       ctx2.strokeStyle = DARK_RED;
       ctx2.lineWidth = 5;
@@ -535,15 +538,18 @@
       if (S <= 0) {
         renderBlade(ctx2, C, S, H);
       }
-      if (C < 0.8) {
-        ctx2.fillStyle = BLACK;
-        ctx2.strokeStyle = BLACK;
-        ctx2.lineWidth = 6;
-        ctx2.beginPath();
-        ctx2.moveTo(9 * S - 2 * C, -12 + H);
-        ctx2.lineTo(6 * S - 2 * C, -13 + H);
-        ctx2.stroke();
+      if (C < 0) {
+        renderArm(ctx2, C, S, H);
       }
+    }
+    function renderArm(ctx2, C, S, H) {
+      ctx2.fillStyle = BLACK;
+      ctx2.strokeStyle = BLACK;
+      ctx2.lineWidth = 6;
+      ctx2.beginPath();
+      ctx2.moveTo(9 * S - 2 * C, -12 + H);
+      ctx2.lineTo(6 * S - 2 * C, -13 + H);
+      ctx2.stroke();
     }
     function render(ctx2) {
       retainTransform(() => {
