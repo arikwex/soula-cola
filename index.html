@@ -611,6 +611,19 @@
       x += vx * dT;
       y += vy * dT;
       angle = -Math.atan2(vy, vx);
+      const gateways = getObjectsByTag("gateway");
+      const interaction = getObjectsByTag("interaction")[0];
+      let hasGateway = false;
+      for (let i = 0; i < gateways.length; i++) {
+        if (gateways[i].inRegion(x, y)) {
+          hasGateway = true;
+          interaction.setGateway(gateways[i]);
+          break;
+        }
+      }
+      if (!hasGateway) {
+        interaction.setGateway(null);
+      }
       self.order = 50 + y / 100;
     }
     function onKeyDown(evt) {
@@ -812,41 +825,53 @@
       }
     }
     function renderTriangleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.moveTo(0, -20 * HEIGHT - 34 + dy);
       ctx2.lineTo(7, -20 * HEIGHT - 24 + dy);
       ctx2.lineTo(-7, -20 * HEIGHT - 24 + dy);
       ctx2.closePath();
       ctx2.stroke();
+      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
     }
     function renderYotaEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.moveTo(0, -20 * HEIGHT - 24);
       ctx2.lineTo(0, -20 * HEIGHT - 28);
       ctx2.moveTo(-5, -20 * HEIGHT - 34);
       ctx2.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
       ctx2.stroke();
+      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
     }
     function renderCircleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
       ctx2.lineTo(0, -20 * HEIGHT - 24 + dy);
       ctx2.stroke();
+      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
     }
     function renderWaveEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
       ctx2.beginPath();
       ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
       ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 - 3 + dy, 4, -20 * HEIGHT - 21 - 3 + dy, 7, -20 * HEIGHT - 29 - 3 + dy);
       ctx2.moveTo(-7, -20 * HEIGHT - 29 + 3 + dy);
       ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 + 3 + dy, 4, -20 * HEIGHT - 21 + 3 + dy, 7, -20 * HEIGHT - 29 + 3 + dy);
+      ctx2.stroke();
+      ctx2.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
       ctx2.stroke();
     }
     function render(ctx2) {
@@ -947,9 +972,16 @@
       }
       desiredEmote = emote;
     }
+    function onConsume({ gateway, emote }) {
+      if (activeGateway == gateway && desiredEmote == emote) {
+        remove([self]);
+      }
+    }
     on("assign-emote", onAssignEmote);
+    on("consume", onConsume);
     function onRemove() {
       off("assign-emote", onAssignEmote);
+      off("consume", onConsume);
     }
     self = {
       update,
@@ -1117,26 +1149,237 @@
     function inRegion(tx, ty) {
       const dx = tx - cx;
       const dy = ty - cy;
-      return dx * dx + dy * dy * 2 < 60 * 60;
+      return dx * dx + dy * dy * 2 < 65 * 65;
     }
     function refreshActive() {
       activeTimer = 0.2;
+    }
+    function getX() {
+      return cx;
+    }
+    function getY() {
+      return cy;
+    }
+    function getEmote() {
+      return emote;
+    }
+    function getCurrentWord() {
+      return "QWE";
     }
     return {
       update,
       render,
       inRegion,
       refreshActive,
+      getX,
+      getY,
+      getEmote,
+      getCurrentWord,
       tags: ["gateway"],
       order: -200
     };
   }
   var gateway_default = Gateway;
 
+  // src/hex-particle.js
+  function HexParticle(cx, cy, emote) {
+    let anim = 0;
+    let R = 255;
+    let G = 255;
+    let B = 255;
+    if (emote == EMOTE.TRIANGLE) {
+      R = 255;
+      G = 192;
+      B = 14;
+    }
+    if (emote == EMOTE.YOTA) {
+      R = 24;
+      G = 200;
+      B = 15;
+    }
+    if (emote == EMOTE.CIRCLE) {
+      R = 237;
+      G = 28;
+      B = 38;
+    }
+    if (emote == EMOTE.WAVE) {
+      R = 163;
+      G = 73;
+      B = 164;
+    }
+    function render(ctx2) {
+      retainTransform(() => {
+        const S = 1 + (1 - Math.exp(-anim * 2));
+        const H = 1;
+        const alpha = Math.max(1 - anim, 0);
+        ctx2.fillStyle = `rgba(${R},${G},${B},${alpha})`;
+        for (let i = 0; i < 6; i++) {
+          ctx2.beginPath();
+          const dx = Math.cos(i / 6 * 6.28) * 70 * S;
+          const dy = Math.sin(i / 6 * 6.28) * 70 / 2 * S;
+          const dx2 = Math.cos((i + 1) / 6 * 6.28) * 70 * S;
+          const dy2 = Math.sin((i + 1) / 6 * 6.28) * 70 / 2 * S;
+          ctx2.moveTo(cx + dx, cy + dy);
+          ctx2.lineTo(cx + dx2, cy + dy2);
+          ctx2.lineTo(cx + dx2, cy + dy2 - 400 * H);
+          ctx2.lineTo(cx + dx, cy + dy - 400 * H);
+          ctx2.fill();
+        }
+      });
+    }
+    function update(dT) {
+      anim += dT * 2;
+      if (anim > 1) {
+        return true;
+      }
+    }
+    return {
+      update,
+      render,
+      order: 900
+    };
+  }
+  var hex_particle_default = HexParticle;
+
+  // src/letter-particle.js
+  function LetterParticle(cx, cy, text) {
+    let anim = 0;
+    function render(ctx2) {
+      retainTransform(() => {
+        const s = 1 + anim * 1;
+        ctx2.translate(cx, cy);
+        ctx2.scale(s, s);
+        ctx2.translate(0, -100);
+        ctx2.font = "40px monospace";
+        const textWidth = ctx2.measureText(text).width;
+        const xOffset = -textWidth / 2;
+        ctx2.fillStyle = `rgba(255,255,0,${Math.max(1 - anim * 2, 0)})`;
+        ctx2.fillText(text, xOffset, 0);
+      });
+    }
+    function update(dT) {
+      anim += dT * 2;
+      if (anim > 0.5) {
+        return true;
+      }
+    }
+    return {
+      update,
+      render,
+      order: 1005
+    };
+  }
+  var letter_particle_default = LetterParticle;
+
+  // src/interaction.js
+  function Interaction() {
+    let cx = 0;
+    let cy = 0;
+    let text = " ";
+    let filledText = "";
+    let numFilled = 0;
+    let nextLetterText = "";
+    let activeGateway = null;
+    let anim = 0;
+    let pulse = 100;
+    const vOffset = -100;
+    function render(ctx2) {
+      if (activeGateway == null) {
+        return;
+      }
+      retainTransform(() => {
+        ctx2.font = "40px monospace";
+        ctx2.lineWidth = 10 + Math.exp(-pulse * 10) * 5;
+        const L = 0 + Math.exp(-pulse * 20) * 200;
+        ctx2.strokeStyle = `rgb(${L},${L},${L})`;
+        const textWidth = ctx2.measureText(text).width;
+        const xOffset = -textWidth / 2;
+        ctx2.strokeText(text, cx + xOffset, cy + vOffset);
+        ctx2.fillStyle = "#333";
+        ctx2.fillText(text, cx + xOffset, cy + vOffset);
+        ctx2.fillStyle = "#fff";
+        ctx2.fillText(filledText, cx + xOffset, cy + vOffset);
+        if (Math.cos(anim * 20) > 0) {
+          ctx2.fillStyle = "#ff0";
+          ctx2.fillText(nextLetterText, cx + xOffset, cy + vOffset);
+        }
+      });
+    }
+    function updateFilledText() {
+      let filledChars = text.split("");
+      for (let i = numFilled; i < text.length; i++) {
+        filledChars[i] = " ";
+      }
+      filledText = filledChars.join("");
+      nextLetterText = [...new Array(numFilled).fill(" "), text[numFilled], ...new Array(text.length - numFilled - 1).fill(" ")].join("");
+    }
+    updateFilledText();
+    function update(dT) {
+      anim += dT;
+      pulse += dT;
+    }
+    function setGateway(g) {
+      if (g != null) {
+        cx = g.getX();
+        cy = g.getY();
+        text = g.getCurrentWord();
+        if (g != activeGateway) {
+          updateFilledText();
+        }
+      } else {
+        numFilled = 0;
+        pulse = 100;
+        updateFilledText();
+      }
+      activeGateway = g;
+    }
+    function onKeyDown(evt) {
+      if (activeGateway == null) {
+        return;
+      }
+      const charKey = evt.key.toUpperCase();
+      const keyCode = evt.keyCode;
+      if (keyCode >= 65 && keyCode <= 90 || keyCode >= 97 && keyCode <= 122) {
+        if (text[numFilled]?.toUpperCase() == charKey) {
+          emit("interact-fill");
+          numFilled += 1;
+          pulse = 0;
+          add(new letter_particle_default(cx, cy, nextLetterText));
+          if (numFilled == text.length) {
+            emit("consume", { gateway: activeGateway, emote: activeGateway.getEmote() });
+            add(new hex_particle_default(activeGateway.getX(), activeGateway.getY(), activeGateway.getEmote()));
+            remove([activeGateway]);
+            activeGateway = null;
+          } else {
+            updateFilledText();
+          }
+        } else {
+          emit("interact-error");
+          numFilled = 0;
+          updateFilledText();
+        }
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    function onRemove() {
+      window.removeEventListener("keydown", onKeyDown);
+    }
+    return {
+      update,
+      render,
+      setGateway,
+      onRemove,
+      tags: ["interaction"],
+      order: 1e3
+    };
+  }
+  var interaction_default = Interaction;
+
   // src/main.js
   function initialize() {
     add(new arena_default());
     add(new soul_manager_default());
+    add(new interaction_default());
     add(new gateway_default(0, -100, EMOTE.TRIANGLE));
     add(new gateway_default(140, 100, EMOTE.WAVE));
     add(new grim_default(0, 0));

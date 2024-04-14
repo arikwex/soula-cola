@@ -86,18 +86,27 @@ function Gateway(cx, cy, emote) {
     function inRegion(tx, ty) {
         const dx = tx - cx;
         const dy = ty - cy;
-        return dx * dx + (dy * dy) * 2 < 60 * 60;
+        return dx * dx + (dy * dy) * 2 < 65 * 65;
     }
 
     function refreshActive() {
         activeTimer = 0.2;
     }
 
+    function getX() { return cx; }
+    function getY() { return cy; }
+    function getEmote() { return emote; }
+    function getCurrentWord() { return "QWE"; }
+
     return {
         update,
         render,
         inRegion,
         refreshActive,
+        getX,
+        getY,
+        getEmote,
+        getCurrentWord,
         tags: ['gateway'],
         order: -200,
     };

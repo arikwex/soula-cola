@@ -2,7 +2,7 @@ import * as bus from './bus';
 import { retainTransform } from "./canvas";
 import { BLACK, WHITE } from "./color";
 import { EMOTE } from "./emote-enum";
-import { add, getObjectsByTag } from "./engine";
+import { add, getObjectsByTag, remove } from "./engine";
 import PoofParticle from './poof-particle';
 
 function Soul(x, y) {
@@ -140,45 +140,56 @@ function Soul(x, y) {
     }
 
     function renderTriangleEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(0, -20 * HEIGHT - 34 + dy);
         ctx.lineTo(7, -20 * HEIGHT - 24 + dy);
         ctx.lineTo(-7, -20 * HEIGHT - 24 + dy);
         ctx.closePath();
         ctx.stroke();
+        ctx.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
     }
 
     function renderYotaEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(0, -20 * HEIGHT - 24);
         ctx.lineTo(0, -20 * HEIGHT - 28);
         ctx.moveTo(-5, -20 * HEIGHT - 34);
         ctx.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
         ctx.stroke();
+        ctx.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
     }
 
     function renderCircleEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
         ctx.lineTo(0, -20 * HEIGHT - 24 + dy);
         ctx.stroke();
+        ctx.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
     }
 
     function renderWaveEmote(ctx, dy) {
-        //A349A4
-        ctx.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(-7, -20 * HEIGHT - 29-3+dy);
         ctx.bezierCurveTo(-4, -20 * HEIGHT - 37-3+dy, 4, -20 * HEIGHT - 21-3+dy, 7, -20 * HEIGHT - 29-3+dy);
         ctx.moveTo(-7, -20 * HEIGHT - 29+3+dy);
         ctx.bezierCurveTo(-4, -20 * HEIGHT - 37+3+dy, 4, -20 * HEIGHT - 21+3+dy, 7, -20 * HEIGHT - 29+3+dy);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
         ctx.stroke();
     }
 
@@ -296,9 +307,17 @@ function Soul(x, y) {
         desiredEmote = emote;
     }
 
+    function onConsume({ gateway, emote }) {
+        if (activeGateway == gateway && desiredEmote == emote) {
+            remove([self]);
+        }
+    }
+
     bus.on('assign-emote', onAssignEmote);
+    bus.on('consume', onConsume);
     function onRemove() {
         bus.off('assign-emote', onAssignEmote);
+        bus.off('consume', onConsume);
     }
 
     self = {

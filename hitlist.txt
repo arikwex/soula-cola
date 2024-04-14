@@ -9,3 +9,5 @@ HITLIST
 - THE Soda Animation
 - Soul manager behavior / level layout to match soda type
 - Audio + Music
+- Main menu
+- Themed font

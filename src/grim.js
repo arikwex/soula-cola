@@ -1,5 +1,6 @@
 import { retainTransform } from "./canvas";
 import { BLACK, BROWN, DARK_ORANGE, DARK_RED, GRAY, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, WHITE } from "./color";
+import { getObjectsByTag } from "./engine";
 
 function Grim(x, y) {
     let self = null;
@@ -146,6 +147,21 @@ function Grim(x, y) {
         x += vx * dT;
         y += vy * dT;
         angle = -Math.atan2(vy, vx);
+
+        // Gateways
+        const gateways = getObjectsByTag('gateway');
+        const interaction = getObjectsByTag('interaction')[0];
+        let hasGateway = false;
+        for (let i = 0; i < gateways.length; i++) {
+            if (gateways[i].inRegion(x, y)) {
+                hasGateway = true;
+                interaction.setGateway(gateways[i]);
+                break;
+            }
+        }
+        if (!hasGateway) {
+            interaction.setGateway(null);
+        }
 
         self.order = 50 + y / 100;
     }
