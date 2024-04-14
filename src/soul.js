@@ -1,5 +1,5 @@
 import { retainTransform } from "./canvas";
-import { BLACK, BLUE, BROWN, DARK_BLUE, DARK_ORANGE, DARK_RED, GRAY, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, TEAL, WHITE } from "./color";
+import { BLACK, BLUE, BROWN, DARK_BLUE, DARK_ORANGE, DARK_RED, GRAY, GRAY_BLUE, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, TEAL, WHITE } from "./color";
 import { getObjectsByTag } from "./engine";
 
 function Soul(x, y) {
@@ -43,7 +43,7 @@ function Soul(x, y) {
         }
     }
 
-    function renderBody(ctx, C, H) {
+    function renderBody(ctx, C, S, H) {
         // Torso
         ctx.fillStyle = DARK_BLUE;
         ctx.strokeStyle = DARK_BLUE;
@@ -62,6 +62,16 @@ function Soul(x, y) {
         ctx.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
         ctx.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
         ctx.stroke();
+
+        // Horns
+        ctx.strokeStyle = DARK_BLUE;
+        ctx.lineWidth = 5 * WIDTH;
+        ctx.beginPath();
+        ctx.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
+        ctx.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
+        ctx.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
+        ctx.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
+        ctx.stroke();
     }
 
     function render(ctx) {
@@ -72,7 +82,7 @@ function Soul(x, y) {
             const S = Math.sin(angle);
             const H = Math.abs(Math.cos(anim * 12)) * 2;
 
-            renderBody(ctx, C, H);
+            renderBody(ctx, C, S, H);
             renderFace(ctx, C, S, H);
         });
     }

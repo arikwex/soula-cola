@@ -679,7 +679,7 @@
         ctx2.stroke();
       }
     }
-    function renderBody(ctx2, C, H) {
+    function renderBody(ctx2, C, S, H) {
       ctx2.fillStyle = DARK_BLUE;
       ctx2.strokeStyle = DARK_BLUE;
       const Q = H * 3;
@@ -695,6 +695,14 @@
       ctx2.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
       ctx2.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
       ctx2.stroke();
+      ctx2.strokeStyle = DARK_BLUE;
+      ctx2.lineWidth = 5 * WIDTH;
+      ctx2.beginPath();
+      ctx2.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
+      ctx2.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
+      ctx2.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
+      ctx2.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
+      ctx2.stroke();
     }
     function render(ctx2) {
       retainTransform(() => {
@@ -702,7 +710,7 @@
         const C = Math.cos(angle);
         const S = Math.sin(angle);
         const H = Math.abs(Math.cos(anim * 12)) * 2;
-        renderBody(ctx2, C, H);
+        renderBody(ctx2, C, S, H);
         renderFace(ctx2, C, S, H);
       });
     }
