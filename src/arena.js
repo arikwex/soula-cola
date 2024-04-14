@@ -1,10 +1,10 @@
 import { retainTransform } from "./canvas";
-import { TAN } from "./color";
+import { BROWN, DARK_ORANGE, LIGHT_GREEN, ORANGE, TAN } from "./color";
 
 function Arena() {
     let anim = 0;
     function render(ctx) {
-        ctx.fillStyle = TAN;
+        ctx.fillStyle = BROWN;
         ctx.beginPath();
         for (let a = 0; a < Math.PI * 2; a += 0.05) {
             const R = 490 * (1 + Math.cos(a * 5 + anim*0.3) * 0.03 + Math.cos(a * 9 - anim * 0.5) * 0.02 +  + Math.cos(a * 17 + anim * 0.9) * 0.01 + Math.cos(a * 4 + 3) * 0.02);

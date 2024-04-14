@@ -430,15 +430,17 @@
   var audio_default = Audio;
 
   // src/color.js
+  var BLACK = "#000000";
   var WHITE = "#FFFFFF";
-  var GRAY = "#444444";
-  var TAN = "#DFD4A0";
+  var LIGHT_GRAY = "#C3C3C3";
+  var DARK_RED = "#880015";
+  var BROWN = "#B97A57";
 
   // src/arena.js
   function Arena() {
     let anim = 0;
     function render(ctx2) {
-      ctx2.fillStyle = TAN;
+      ctx2.fillStyle = BROWN;
       ctx2.beginPath();
       for (let a = 0; a < Math.PI * 2; a += 0.05) {
         const R = 490 * (1 + Math.cos(a * 5 + anim * 0.3) * 0.03 + Math.cos(a * 9 - anim * 0.5) * 0.02 + +Math.cos(a * 17 + anim * 0.9) * 0.01 + Math.cos(a * 4 + 3) * 0.02);
@@ -472,7 +474,7 @@
       ctx2.strokeStyle = WHITE;
       S -= 0.2;
       if (S < 0) {
-        const wd = Math.max(Math.min(-20 * S, 14), 0);
+        const wd = Math.max(Math.min(-16 * S, 14), 0);
         const s = (14 - wd) * 0.5;
         ctx2.lineWidth = wd;
         ctx2.beginPath();
@@ -482,8 +484,8 @@
       }
     }
     function renderCloak(ctx2, C) {
-      ctx2.fillStyle = GRAY;
-      ctx2.strokeStyle = GRAY;
+      ctx2.fillStyle = BLACK;
+      ctx2.strokeStyle = BLACK;
       ctx2.lineWidth = 4;
       ctx2.beginPath();
       ctx2.moveTo(-7, 0);
@@ -495,7 +497,7 @@
       ctx2.stroke();
       ctx2.beginPath();
       ctx2.lineTo(-11 * C, -16);
-      ctx2.bezierCurveTo(-11 * C, -32, -10 * C, -36, 7 * C, -34);
+      ctx2.bezierCurveTo(-11 * C, -30, -10 * C, -32, 7 * C, -34);
       ctx2.lineTo(7 * C, -17);
       ctx2.lineTo(0, -22);
       ctx2.closePath();
@@ -507,13 +509,54 @@
       ctx2.lineTo(C * 5, -22);
       ctx2.stroke();
     }
+    function renderBlade(ctx2, C, S) {
+      ctx2.fillStyle = LIGHT_GRAY;
+      ctx2.strokeStyle = LIGHT_GRAY;
+      ctx2.lineWidth = 6;
+      ctx2.beginPath();
+      ctx2.moveTo(12 * S + 4.5 * C, -45);
+      ctx2.lineTo(11 * S + 13 * C, -40);
+      ctx2.lineTo(11 * S + 15 * C, -34);
+      ctx2.stroke();
+    }
+    function renderScythe(ctx2, C, S) {
+      if (S > 0) {
+        renderBlade(ctx2, C, S);
+      }
+      ctx2.fillStyle = DARK_RED;
+      ctx2.strokeStyle = DARK_RED;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.moveTo(11 * S - 7 * C, 1.5 * C);
+      ctx2.lineTo(11 * S + 3 * C, -33);
+      ctx2.lineTo(12 * S + 4 * C, -45);
+      ctx2.stroke();
+      if (S <= 0) {
+        renderBlade(ctx2, C, S);
+      }
+      if (C < 0.85) {
+        ctx2.fillStyle = BLACK;
+        ctx2.strokeStyle = BLACK;
+        ctx2.lineWidth = 6;
+        ctx2.beginPath();
+        ctx2.moveTo(9 * S - 2 * C, -11);
+        ctx2.lineTo(6 * S - 2 * C, -13);
+        ctx2.stroke();
+      }
+    }
     function render(ctx2) {
       retainTransform(() => {
         ctx2.translate(x, y);
         const C = Math.cos(angle);
         const S = Math.sin(angle);
+        if (C < 0) {
+          renderScythe(ctx2, C, S);
+        }
         renderCloak(ctx2, C);
         renderHead(ctx2, C, S);
+        if (C >= 0) {
+          renderScythe(ctx2, C, S);
+        }
       });
     }
     function update(dT) {

@@ -7,7 +7,7 @@
 
 export const BLACK = '#000000';
 export const WHITE = '#FFFFFF';
-export const GRAY = '#444444'; //'#7F7F7F';
+export const GRAY = '#7F7F7F';
 export const LIGHT_GRAY = '#C3C3C3';
 export const DARK_RED = '#880015';
 export const BROWN = '#B97A57';
@@ -16,7 +16,7 @@ export const PINK = '#FFAEC9';
 export const DARK_ORANGE = '#FF7F27';
 export const ORANGE = '#FFC90E';
 export const YELLOW = '#FFF200';
-export const TAN = '#DFD4A0'; //'#EFE4B0';
+export const TAN = '#EFE4B0';
 export const GREEN = '#22B14C';
 export const LIGHT_GREEN = '#B5E61D';
 export const BLUE = '#00A2E8';
