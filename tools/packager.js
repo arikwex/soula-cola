@@ -59,6 +59,6 @@ module.exports = {
         const buffer = fs.readFileSync(dest.zip);
         const strFormat = buffer.length.toLocaleString('en-US');
         let color = chalk.green;
-        console.log(`===> Build Size: ${color(strFormat + 'bytes')} <===`);
+        console.log(`===> Build Size: ${color(strFormat + ' bytes')} <===`);
     },
 }

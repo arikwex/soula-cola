@@ -4,8 +4,12 @@ import { BLACK, BROWN, DARK_ORANGE, DARK_RED, GRAY, LIGHT_GRAY, LIGHT_PURPLE, OR
 function Grim() {
     let x = 0;
     let y = 0;
+    let vx = 0;
+    let vy = 0;
+    let SPEED = 90;
     let angle = 0;
     let anim = 0;
+    let keys = {};
 
     function renderHead(ctx, C, S, H) {
         ctx.fillStyle = WHITE;
@@ -60,9 +64,9 @@ function Grim() {
         ctx.strokeStyle = LIGHT_GRAY;
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(12 * S + 4.5 * C, -45 + H);
-        ctx.lineTo(11 * S + 13 * C, -40 + H);
-        ctx.lineTo(11 * S + 15 * C, -34 + H);
+        ctx.moveTo(14 * S + 4.5 * C, -45 + H);
+        ctx.lineTo(15 * S + 15 * C, -42 + H);
+        ctx.lineTo(12 * S + 18 * C, -38 + H);
         ctx.stroke();
     }
 
@@ -78,9 +82,9 @@ function Grim() {
         ctx.strokeStyle = DARK_RED;
         ctx.lineWidth = 5;
         ctx.beginPath();
-        ctx.moveTo(11 * S - 7 * C, 1.5 * C + H);
-        ctx.lineTo(11 * S + 3 * C, -33 + H);
-        ctx.lineTo(12 * S + 4 * C, -45 + H);
+        ctx.moveTo(13 * S - 7 * C, 1.5 * C + H);
+        ctx.lineTo(13 * S + 3 * C, -33 + H);
+        ctx.lineTo(14 * S + 4 * C, -45 + H);
         ctx.stroke();
         if (S <= 0) {
             renderBlade(ctx, C, S, H);
@@ -95,8 +99,8 @@ function Grim() {
         ctx.strokeStyle = BLACK;
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(9 * S - 2 * C, -12 + H);
-        ctx.lineTo(6 * S - 2 * C, -13 + H);
+        ctx.moveTo(11 * S - 2 * C, -12 + H);
+        ctx.lineTo(8 * S - 2 * C, -13 + H);
         ctx.stroke();
     }
 
@@ -120,15 +124,57 @@ function Grim() {
     }
 
     function update(dT) {
-        anim += dT * 0.3;
-        angle += dT * 2;
-        // x += Math.cos(angle) * 43 * dT;
-        // y -= Math.sin(angle) * 43 * dT;
+        let tx = 0;
+        let ty = 0;
+        if (keys['ArrowLeft']) { tx -= 1; }
+        if (keys['ArrowRight']) { tx += 1; }
+        if (keys['ArrowUp']) { ty -= 1; }
+        if (keys['ArrowDown']) { ty += 1; }
+
+        const M = Math.sqrt(tx*tx + ty*ty);
+        if (M > 0.1) {
+            tx *= SPEED / M;
+            ty *= SPEED / M;
+            vx += (tx - vx) * 10.0 * dT;
+            vy += (ty - vy) * 10.0 * dT;
+            anim += dT * 1.0;
+        } else {
+            vx += -vx * 5.0 * dT;
+            vy += -vy * 5.0 * dT;
+            anim += dT * 0.3;
+        }
+        
+        x += vx * dT;
+        y += vy * dT;
+        angle = -Math.atan2(vy, vx);
+    }
+
+    function onKeyDown(evt) {
+        keys[evt.key] = true;
+    }
+
+    function onKeyUp(evt) {
+        keys[evt.key] = false;
+    }
+
+    function onFocus(){
+        keys = {};
+    }
+
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    function onRemove() {
+        window.removeEventListener('focus', onFocus);
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
     }
 
     return {
         update,
         render,
+        onRemove,
         order: 50,
     };
 }

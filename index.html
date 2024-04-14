@@ -97,6 +97,9 @@
     gameObjects.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
   function arrayRemove(list, valuesToEvict) {
+    valuesToEvict.forEach((obj) => {
+      obj.onRemove?.();
+    });
     return list.filter((g) => !valuesToEvict.includes(g));
   }
   function remove(objList) {
@@ -467,8 +470,12 @@
   function Grim() {
     let x = 0;
     let y = 0;
+    let vx = 0;
+    let vy = 0;
+    let SPEED = 90;
     let angle = 0;
     let anim = 0;
+    let keys = {};
     function renderHead(ctx2, C, S, H) {
       ctx2.fillStyle = WHITE;
       ctx2.strokeStyle = WHITE;
@@ -515,9 +522,9 @@
       ctx2.strokeStyle = LIGHT_GRAY;
       ctx2.lineWidth = 6;
       ctx2.beginPath();
-      ctx2.moveTo(12 * S + 4.5 * C, -45 + H);
-      ctx2.lineTo(11 * S + 13 * C, -40 + H);
-      ctx2.lineTo(11 * S + 15 * C, -34 + H);
+      ctx2.moveTo(14 * S + 4.5 * C, -45 + H);
+      ctx2.lineTo(15 * S + 15 * C, -42 + H);
+      ctx2.lineTo(12 * S + 18 * C, -38 + H);
       ctx2.stroke();
     }
     function renderScythe(ctx2, C, S, H) {
@@ -531,9 +538,9 @@
       ctx2.strokeStyle = DARK_RED;
       ctx2.lineWidth = 5;
       ctx2.beginPath();
-      ctx2.moveTo(11 * S - 7 * C, 1.5 * C + H);
-      ctx2.lineTo(11 * S + 3 * C, -33 + H);
-      ctx2.lineTo(12 * S + 4 * C, -45 + H);
+      ctx2.moveTo(13 * S - 7 * C, 1.5 * C + H);
+      ctx2.lineTo(13 * S + 3 * C, -33 + H);
+      ctx2.lineTo(14 * S + 4 * C, -45 + H);
       ctx2.stroke();
       if (S <= 0) {
         renderBlade(ctx2, C, S, H);
@@ -547,8 +554,8 @@
       ctx2.strokeStyle = BLACK;
       ctx2.lineWidth = 6;
       ctx2.beginPath();
-      ctx2.moveTo(9 * S - 2 * C, -12 + H);
-      ctx2.lineTo(6 * S - 2 * C, -13 + H);
+      ctx2.moveTo(11 * S - 2 * C, -12 + H);
+      ctx2.lineTo(8 * S - 2 * C, -13 + H);
       ctx2.stroke();
     }
     function render(ctx2) {
@@ -568,12 +575,57 @@
       });
     }
     function update(dT) {
-      anim += dT * 0.3;
-      angle += dT * 2;
+      let tx = 0;
+      let ty = 0;
+      if (keys["ArrowLeft"]) {
+        tx -= 1;
+      }
+      if (keys["ArrowRight"]) {
+        tx += 1;
+      }
+      if (keys["ArrowUp"]) {
+        ty -= 1;
+      }
+      if (keys["ArrowDown"]) {
+        ty += 1;
+      }
+      const M = Math.sqrt(tx * tx + ty * ty);
+      if (M > 0.1) {
+        tx *= SPEED / M;
+        ty *= SPEED / M;
+        vx += (tx - vx) * 10 * dT;
+        vy += (ty - vy) * 10 * dT;
+        anim += dT * 1;
+      } else {
+        vx += -vx * 5 * dT;
+        vy += -vy * 5 * dT;
+        anim += dT * 0.3;
+      }
+      x += vx * dT;
+      y += vy * dT;
+      angle = -Math.atan2(vy, vx);
+    }
+    function onKeyDown(evt) {
+      keys[evt.key] = true;
+    }
+    function onKeyUp(evt) {
+      keys[evt.key] = false;
+    }
+    function onFocus() {
+      keys = {};
+    }
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    function onRemove() {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
     }
     return {
       update,
       render,
+      onRemove,
       order: 50
     };
   }

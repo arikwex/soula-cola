@@ -56,6 +56,7 @@ function resort() {
 }
 
 function arrayRemove(list, valuesToEvict) {
+    valuesToEvict.forEach((obj) => { obj.onRemove?.(); });
     return list.filter((g) => !valuesToEvict.includes(g));
 }
 
@@ -69,6 +70,7 @@ function remove(objList) {
 }
 
 function clear() {
+    gameObjects.forEach((obj) => { obj.onRemove?.(); });
     gameObjects = [];
 }
 
