@@ -469,7 +469,7 @@
     let y = 0;
     let angle = 0;
     let anim = 0;
-    function renderHead(ctx2, C, S) {
+    function renderHead(ctx2, C, S, H) {
       ctx2.fillStyle = WHITE;
       ctx2.strokeStyle = WHITE;
       S -= 0.2;
@@ -478,69 +478,70 @@
         const s = (14 - wd) * 0.5;
         ctx2.lineWidth = wd;
         ctx2.beginPath();
-        ctx2.moveTo(C * (8 + s), -26 - s * 0.7);
-        ctx2.lineTo(C * (8 + s), -22 + s * 0.7);
+        ctx2.moveTo(C * (8 + s), -26 - s * 0.7 + H);
+        ctx2.lineTo(C * (8 + s), -22 + s * 0.7 + H);
         ctx2.stroke();
       }
     }
-    function renderCloak(ctx2, C) {
+    function renderCloak(ctx2, C, H) {
       ctx2.fillStyle = BLACK;
       ctx2.strokeStyle = BLACK;
       ctx2.lineWidth = 4;
       ctx2.beginPath();
-      ctx2.moveTo(-7, 0);
-      ctx2.lineTo(-2, -24);
-      ctx2.lineTo(2, -24);
-      ctx2.lineTo(7, 0);
+      const Q = H * 0.5;
+      ctx2.moveTo(-7 - Q, 0);
+      ctx2.lineTo(-2 - Q, -24 + H);
+      ctx2.lineTo(2 + Q, -24 + H);
+      ctx2.lineTo(7 + Q, 0);
       ctx2.closePath();
       ctx2.fill();
       ctx2.stroke();
       ctx2.beginPath();
-      ctx2.lineTo(-11 * C, -16);
-      ctx2.bezierCurveTo(-11 * C, -30, -10 * C, -32, 7 * C, -34);
-      ctx2.lineTo(7 * C, -17);
-      ctx2.lineTo(0, -22);
+      ctx2.lineTo(-11 * C, -16 + H);
+      ctx2.bezierCurveTo(-11 * C, -30 + H, -10 * C, -32 + H, 7 * C, -34 + H);
+      ctx2.lineTo(7 * C, -17 + H);
+      ctx2.lineTo(0, -22 + H / 2);
       ctx2.closePath();
       ctx2.fill();
       ctx2.stroke();
       ctx2.lineWidth = 18;
       ctx2.beginPath();
-      ctx2.moveTo(C * 5, -27);
-      ctx2.lineTo(C * 5, -22);
+      ctx2.moveTo(C * 5, -27 + H);
+      ctx2.lineTo(C * 5, -22 + H);
       ctx2.stroke();
     }
-    function renderBlade(ctx2, C, S) {
+    function renderBlade(ctx2, C, S, H) {
       ctx2.fillStyle = LIGHT_GRAY;
       ctx2.strokeStyle = LIGHT_GRAY;
       ctx2.lineWidth = 6;
       ctx2.beginPath();
-      ctx2.moveTo(12 * S + 4.5 * C, -45);
-      ctx2.lineTo(11 * S + 13 * C, -40);
-      ctx2.lineTo(11 * S + 15 * C, -34);
+      ctx2.moveTo(12 * S + 4.5 * C, -45 + H);
+      ctx2.lineTo(11 * S + 13 * C, -40 + H);
+      ctx2.lineTo(11 * S + 15 * C, -34 + H);
       ctx2.stroke();
     }
-    function renderScythe(ctx2, C, S) {
+    function renderScythe(ctx2, C, S, H) {
       if (S > 0) {
-        renderBlade(ctx2, C, S);
+        renderBlade(ctx2, C, S, H);
       }
       ctx2.fillStyle = DARK_RED;
       ctx2.strokeStyle = DARK_RED;
       ctx2.lineWidth = 5;
       ctx2.beginPath();
-      ctx2.moveTo(11 * S - 7 * C, 1.5 * C);
-      ctx2.lineTo(11 * S + 3 * C, -33);
-      ctx2.lineTo(12 * S + 4 * C, -45);
+      ctx2.moveTo(11 * S - 7 * C, 1.5 * C + H);
+      ctx2.lineTo(11 * S + 3 * C, -33 + H);
+      ctx2.lineTo(12 * S + 4 * C, -45 + H);
       ctx2.stroke();
       if (S <= 0) {
-        renderBlade(ctx2, C, S);
+        renderBlade(ctx2, C, S, H);
       }
-      if (C < 0.85) {
+      if (C < 0.8) {
         ctx2.fillStyle = BLACK;
         ctx2.strokeStyle = BLACK;
         ctx2.lineWidth = 6;
         ctx2.beginPath();
-        ctx2.moveTo(9 * S - 2 * C, -11);
-        ctx2.lineTo(6 * S - 2 * C, -13);
+        ctx2.moveTo(9 * S - 2 * C, -12 + H);
+        ctx2.lineTo(6 * S - 2 * C, -13 + H);
         ctx2.stroke();
       }
     }
@@ -549,20 +550,20 @@
         ctx2.translate(x, y);
         const C = Math.cos(angle);
         const S = Math.sin(angle);
+        const H = Math.abs(Math.cos(anim * 12)) * 2;
         if (C < 0) {
-          renderScythe(ctx2, C, S);
+          renderScythe(ctx2, C, S, H);
         }
-        renderCloak(ctx2, C);
-        renderHead(ctx2, C, S);
+        renderCloak(ctx2, C, H);
+        renderHead(ctx2, C, S, H);
         if (C >= 0) {
-          renderScythe(ctx2, C, S);
+          renderScythe(ctx2, C, S, H);
         }
       });
     }
     function update(dT) {
-      angle += dT * 3;
-      x += Math.cos(angle) * 13 * dT;
-      y -= Math.sin(angle) * 13 * dT;
+      anim += dT * 0.3;
+      angle += dT * 2;
     }
     return {
       update,

@@ -7,7 +7,7 @@ function Grim() {
     let angle = 0;
     let anim = 0;
 
-    function renderHead(ctx, C, S) {
+    function renderHead(ctx, C, S, H) {
         ctx.fillStyle = WHITE;
         ctx.strokeStyle = WHITE;
         S -= 0.2;
@@ -16,78 +16,80 @@ function Grim() {
             const s = (14 - wd) * 0.5;
             ctx.lineWidth = wd;
             ctx.beginPath();
-            ctx.moveTo(C * (8 + s), -26 - s * 0.7);
-            ctx.lineTo(C * (8 + s), -22 + s * 0.7);
+            ctx.moveTo(C * (8 + s), -26 - s * 0.7 + H);
+            ctx.lineTo(C * (8 + s), -22 + s * 0.7 + H);
             ctx.stroke();
         }
     }
 
-    function renderCloak(ctx, C) {
+    function renderCloak(ctx, C, H) {
         // Torso
         ctx.fillStyle = BLACK;
         ctx.strokeStyle = BLACK;
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(-7, 0);
-        ctx.lineTo(-2, -24);
-        ctx.lineTo(2, -24);
-        ctx.lineTo(7, 0);
+        const Q = H * 0.5;
+        ctx.moveTo(-7 - Q, 0);
+        ctx.lineTo(-2 - Q, -24 + H);
+        ctx.lineTo(2 + Q, -24 + H);
+        ctx.lineTo(7 + Q, 0);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         // Hood
         ctx.beginPath();
-        ctx.lineTo(-11 * C, -16);
-        ctx.bezierCurveTo(-11 * C, -30, -10 * C, -32, 7 * C, -34);
-        ctx.lineTo(7 * C, -17);
-        ctx.lineTo(0, -22);
+        ctx.lineTo(-11 * C, -16 + H);
+        ctx.bezierCurveTo(-11 * C, -30 + H, -10 * C, -32 + H, 7 * C, -34 + H);
+        ctx.lineTo(7 * C, -17 + H);
+        ctx.lineTo(0, -22 + H / 2);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
+        // Hood-face/lining
         ctx.lineWidth = 18;
         ctx.beginPath();
-        ctx.moveTo(C * 5, -27);
-        ctx.lineTo(C * 5, -22);
+        ctx.moveTo(C * 5, -27 + H);
+        ctx.lineTo(C * 5, -22 + H);
         ctx.stroke();
     }
 
-    function renderBlade(ctx, C, S) {
+    function renderBlade(ctx, C, S, H) {
         ctx.fillStyle = LIGHT_GRAY;
         ctx.strokeStyle = LIGHT_GRAY;
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(12 * S + 4.5 * C, -45);
-        ctx.lineTo(11 * S + 13 * C, -40);
-        ctx.lineTo(11 * S + 15 * C, -34);
+        ctx.moveTo(12 * S + 4.5 * C, -45 + H);
+        ctx.lineTo(11 * S + 13 * C, -40 + H);
+        ctx.lineTo(11 * S + 15 * C, -34 + H);
         ctx.stroke();
     }
 
-    function renderScythe(ctx, C, S) {
+    function renderScythe(ctx, C, S, H) {
         if (S > 0) {
-            renderBlade(ctx, C, S);
+            renderBlade(ctx, C, S, H);
         }
         ctx.fillStyle = DARK_RED;
         ctx.strokeStyle = DARK_RED;
         ctx.lineWidth = 5;
         ctx.beginPath();
-        ctx.moveTo(11 * S - 7 * C, 1.5 * C);
-        ctx.lineTo(11 * S + 3 * C, -33);
-        ctx.lineTo(12 * S + 4 * C, -45);
+        ctx.moveTo(11 * S - 7 * C, 1.5 * C + H);
+        ctx.lineTo(11 * S + 3 * C, -33 + H);
+        ctx.lineTo(12 * S + 4 * C, -45 + H);
         ctx.stroke();
         if (S <= 0) {
-            renderBlade(ctx, C, S);
+            renderBlade(ctx, C, S, H);
         }
 
         // Arm holding scythe
-        if (C < 0.85) {
+        if (C < 0.8) {
             ctx.fillStyle = BLACK;
             ctx.strokeStyle = BLACK;
             ctx.lineWidth = 6;
             ctx.beginPath();
-            ctx.moveTo(9 * S - 2 * C, -11);
-            ctx.lineTo(6 * S - 2 * C, -13);
+            ctx.moveTo(9 * S - 2 * C, -12 + H);
+            ctx.lineTo(6 * S - 2 * C, -13 + H);
             ctx.stroke();
         }
     }
@@ -98,23 +100,24 @@ function Grim() {
             
             const C = Math.cos(angle);
             const S = Math.sin(angle);
+            const H = Math.abs(Math.cos(anim * 12)) * 2;
 
             if (C < 0) {
-                renderScythe(ctx, C, S);
+                renderScythe(ctx, C, S, H);
             }
-            renderCloak(ctx, C);
-            renderHead(ctx, C, S);
+            renderCloak(ctx, C, H);
+            renderHead(ctx, C, S, H);
             if (C >= 0) {
-                renderScythe(ctx, C, S);
+                renderScythe(ctx, C, S, H);
             }
         });
     }
 
     function update(dT) {
-        // angle = Math.cos(Date.now()*0.01) * 0.1; //dT * 2;
-        angle += dT * 3;
-        x += Math.cos(angle) * 13 * dT;
-        y -= Math.sin(angle) * 13 * dT;
+        anim += dT * 0.3;
+        angle += dT * 2;
+        // x += Math.cos(angle) * 43 * dT;
+        // y -= Math.sin(angle) * 43 * dT;
     }
 
     return {
