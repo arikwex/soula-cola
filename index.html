@@ -465,33 +465,61 @@
   function Grim() {
     let x = 0;
     let y = 0;
+    let angle = 0;
     let anim = 0;
+    function renderHead(ctx2, C, S) {
+      ctx2.fillStyle = WHITE;
+      ctx2.strokeStyle = WHITE;
+      S -= 0.2;
+      if (S < 0) {
+        const wd = Math.max(Math.min(-20 * S, 14), 0);
+        const s = (14 - wd) * 0.5;
+        ctx2.lineWidth = wd;
+        ctx2.beginPath();
+        ctx2.moveTo(C * (8 + s), -26 - s * 0.7);
+        ctx2.lineTo(C * (8 + s), -22 + s * 0.7);
+        ctx2.stroke();
+      }
+    }
+    function renderCloak(ctx2, C) {
+      ctx2.fillStyle = GRAY;
+      ctx2.strokeStyle = GRAY;
+      ctx2.lineWidth = 4;
+      ctx2.beginPath();
+      ctx2.moveTo(-7, 0);
+      ctx2.lineTo(-2, -24);
+      ctx2.lineTo(2, -24);
+      ctx2.lineTo(7, 0);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.lineTo(-11 * C, -16);
+      ctx2.bezierCurveTo(-11 * C, -32, -10 * C, -36, 7 * C, -34);
+      ctx2.lineTo(7 * C, -17);
+      ctx2.lineTo(0, -22);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.lineWidth = 18;
+      ctx2.beginPath();
+      ctx2.moveTo(C * 5, -27);
+      ctx2.lineTo(C * 5, -22);
+      ctx2.stroke();
+    }
     function render(ctx2) {
       retainTransform(() => {
         ctx2.translate(x, y);
-        ctx2.fillStyle = WHITE;
-        ctx2.strokeStyle = WHITE;
-        ctx2.lineWidth = 14;
-        ctx2.beginPath();
-        ctx2.moveTo(8, -26);
-        ctx2.lineTo(8, -22);
-        ctx2.stroke();
-        ctx2.fillStyle = GRAY;
-        ctx2.strokeStyle = GRAY;
-        ctx2.lineWidth = 4;
-        ctx2.beginPath();
-        ctx2.moveTo(-7, 0);
-        ctx2.lineTo(-2, -24);
-        ctx2.lineTo(-11, -16);
-        ctx2.bezierCurveTo(-11, -32, -10, -36, 7, -34);
-        ctx2.lineTo(7, 0);
-        ctx2.closePath();
-        ctx2.fill();
-        ctx2.stroke();
+        const C = Math.cos(angle);
+        const S = Math.sin(angle);
+        renderCloak(ctx2, C);
+        renderHead(ctx2, C, S);
       });
     }
     function update(dT) {
-      anim += dT * 2;
+      angle += dT * 3;
+      x += Math.cos(angle) * 13 * dT;
+      y -= Math.sin(angle) * 13 * dT;
     }
     return {
       update,
