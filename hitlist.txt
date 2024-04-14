@@ -1,8 +1,9 @@
 HITLIST
 =======
 
-- grim controls
-- souls
-- follow player
+- Soul discoloration
+- Objective portals
+- Soul requests
 - type full words / in theme / longer for challenge
+- "meep meep meep" in desperation for their desires
 - THE Soda Animation

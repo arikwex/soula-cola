@@ -25,3 +25,4 @@ export const DARK_BLUE = '#3F48CC';
 export const GRAY_BLUE = '#7092BE';
 export const PURPLE = '#A349A4';
 export const LIGHT_PURPLE = '#C8BFE7';
+export const GHOST = 'rgba(200,200,200,0.5)';

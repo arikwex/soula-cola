@@ -1,12 +1,12 @@
 import { retainTransform } from "./canvas";
-import { BLACK, BLUE, BROWN, DARK_BLUE, DARK_ORANGE, DARK_RED, GRAY, GRAY_BLUE, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, TEAL, WHITE } from "./color";
+import { BLACK, BLUE, BROWN, DARK_BLUE, DARK_ORANGE, DARK_RED, GHOST, GRAY, GRAY_BLUE, GREEN, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, RED, TAN, TEAL, WHITE } from "./color";
+import { EMOTE } from "./emote-enum";
 import { getObjectsByTag } from "./engine";
 
 function Soul(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let actualMotion = 0;
     let SPEED = 70 + Math.random() * 30;
     
     let HEIGHT = 0.9 + Math.random() * 1.0; // 0.9 - 1.9
@@ -18,8 +18,40 @@ function Soul(x, y) {
     let angle = Math.random() * 7;
     let anim = Math.random() * 100;
 
+    let desiredEmote = EMOTE.CIRCLE;
+    let hunger = 0;
+    let hungerAnim = Math.random() * 100;
+
+    function getFaceColor() {
+        // 00A2E8
+        let q = (1-hunger) + Math.cos(hungerAnim * 4) * 0.1;
+        let R = 0;
+        let G = 162;
+        let B = 232;
+        let A = 1;
+        R = R * q + 200 * (1-q);
+        G = G * q + 200 * (1-q);
+        B = B * q + 200 * (1-q);
+        A = A * q + 0.1 * (1-q);
+        return `rgba(${R},${G},${B},${A})`;
+    }
+
+    function getTorsoColor() {
+        // 3F48CC
+        let q = (1-hunger) + Math.cos(hungerAnim * 4) * 0.1;
+        let R = 63;
+        let G = 72;
+        let B = 204;
+        let A = 1;
+        R = R * q + 200 * (1-q);
+        G = G * q + 200 * (1-q);
+        B = B * q + 200 * (1-q);
+        A = A * q + 0.1 * (1-q);
+        return `rgba(${R},${G},${B},${A})`;
+    }
+
     function renderFace(ctx, C, S, H) {
-        ctx.strokeStyle = BLUE;
+        ctx.strokeStyle = getFaceColor();
         S -= 0.2;
         if (S < 0) {
             const wd = Math.max(Math.min(-16 * S, 14), 0.0);
@@ -45,8 +77,9 @@ function Soul(x, y) {
 
     function renderBody(ctx, C, S, H) {
         // Torso
-        ctx.fillStyle = DARK_BLUE;
-        ctx.strokeStyle = DARK_BLUE;
+        const col = getTorsoColor();
+        ctx.fillStyle = col;
+        ctx.strokeStyle = col;
         const Q = H * 3.0;
         ctx.lineWidth = (16 * WIDTH + Q);
         ctx.beginPath();
@@ -64,13 +97,64 @@ function Soul(x, y) {
         ctx.stroke();
 
         // Horns
-        ctx.strokeStyle = DARK_BLUE;
+        ctx.strokeStyle = col;
         ctx.lineWidth = 5 * WIDTH;
         ctx.beginPath();
         ctx.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
         ctx.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
         ctx.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
         ctx.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
+        ctx.stroke();
+    }
+
+    function renderEmote(ctx) {
+        // Emote
+        // renderYotaEmote(ctx, 0);
+        // renderTriangleEmote(ctx, -15);
+        // renderCircleEmote(ctx, -30);
+        // renderWaveEmote(ctx,-45);
+    }
+
+    function renderTriangleEmote(ctx, dy) {
+        ctx.strokeStyle = `rgba(255,192,14,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -20 * HEIGHT - 34 + dy);
+        ctx.lineTo(7, -20 * HEIGHT - 24 + dy);
+        ctx.lineTo(-7, -20 * HEIGHT - 24 + dy);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    function renderYotaEmote(ctx, dy) {
+        ctx.strokeStyle = `rgba(34,200,15,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -20 * HEIGHT - 24);
+        ctx.lineTo(0, -20 * HEIGHT - 28);
+        ctx.moveTo(-5, -20 * HEIGHT - 34);
+        ctx.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
+        ctx.stroke();
+    }
+
+    function renderCircleEmote(ctx, dy) {
+        ctx.strokeStyle = `rgba(237,28,38,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
+        ctx.lineTo(0, -20 * HEIGHT - 24 + dy);
+        ctx.stroke();
+    }
+
+    function renderWaveEmote(ctx, dy) {
+        // ctx.strokeStyle = TEAL; // 99D9EA
+        ctx.strokeStyle = `rgba(163,217,234,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-7, -20 * HEIGHT - 29-3+dy);
+        ctx.bezierCurveTo(-4, -20 * HEIGHT - 37-3+dy, 4, -20 * HEIGHT - 21-3+dy, 7, -20 * HEIGHT - 29-3+dy);
+        ctx.moveTo(-7, -20 * HEIGHT - 29+3+dy);
+        ctx.bezierCurveTo(-4, -20 * HEIGHT - 37+3+dy, 4, -20 * HEIGHT - 21+3+dy, 7, -20 * HEIGHT - 29+3+dy);
         ctx.stroke();
     }
 
@@ -84,12 +168,16 @@ function Soul(x, y) {
 
             renderBody(ctx, C, S, H);
             renderFace(ctx, C, S, H);
+            renderEmote(ctx);
         });
     }
 
     function update(dT) {
-        // anim += dT * 0.3;
-        // angle += dT * 2.0;
+        hungerAnim += dT;
+        hunger += dT * 0.2;
+        if (hunger > 1) {
+            hunger = 0;
+        }
         
         let tx = 0;
         let ty = 0;

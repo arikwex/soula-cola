@@ -439,8 +439,6 @@
   var LIGHT_GRAY = "#C3C3C3";
   var DARK_RED = "#880015";
   var BROWN = "#B97A57";
-  var BLUE = "#00A2E8";
-  var DARK_BLUE = "#3F48CC";
 
   // src/arena.js
   function Arena() {
@@ -644,12 +642,19 @@
   }
   var grim_default = Grim;
 
+  // src/emote-enum.js
+  var EMOTE = {
+    TRIANGLE: 0,
+    YOTA: 1,
+    CIRCLE: 2,
+    WAVE: 3
+  };
+
   // src/soul.js
   function Soul(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let actualMotion = 0;
     let SPEED = 70 + Math.random() * 30;
     let HEIGHT = 0.9 + Math.random() * 1;
     let WIDTH = 0.9 + Math.random() * 0.4;
@@ -658,8 +663,35 @@
     let FACE_PLACE = -1 + Math.random() * 8;
     let angle = Math.random() * 7;
     let anim = Math.random() * 100;
+    let desiredEmote = EMOTE.CIRCLE;
+    let hunger = 0;
+    let hungerAnim = Math.random() * 100;
+    function getFaceColor() {
+      let q = 1 - hunger + Math.cos(hungerAnim * 4) * 0.1;
+      let R = 0;
+      let G = 162;
+      let B = 232;
+      let A = 1;
+      R = R * q + 200 * (1 - q);
+      G = G * q + 200 * (1 - q);
+      B = B * q + 200 * (1 - q);
+      A = A * q + 0.1 * (1 - q);
+      return `rgba(${R},${G},${B},${A})`;
+    }
+    function getTorsoColor() {
+      let q = 1 - hunger + Math.cos(hungerAnim * 4) * 0.1;
+      let R = 63;
+      let G = 72;
+      let B = 204;
+      let A = 1;
+      R = R * q + 200 * (1 - q);
+      G = G * q + 200 * (1 - q);
+      B = B * q + 200 * (1 - q);
+      A = A * q + 0.1 * (1 - q);
+      return `rgba(${R},${G},${B},${A})`;
+    }
     function renderFace(ctx2, C, S, H) {
-      ctx2.strokeStyle = BLUE;
+      ctx2.strokeStyle = getFaceColor();
       S -= 0.2;
       if (S < 0) {
         const wd = Math.max(Math.min(-16 * S, 14), 0);
@@ -680,8 +712,9 @@
       }
     }
     function renderBody(ctx2, C, S, H) {
-      ctx2.fillStyle = DARK_BLUE;
-      ctx2.strokeStyle = DARK_BLUE;
+      const col = getTorsoColor();
+      ctx2.fillStyle = col;
+      ctx2.strokeStyle = col;
       const Q = H * 3;
       ctx2.lineWidth = 16 * WIDTH + Q;
       ctx2.beginPath();
@@ -695,13 +728,53 @@
       ctx2.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
       ctx2.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
       ctx2.stroke();
-      ctx2.strokeStyle = DARK_BLUE;
+      ctx2.strokeStyle = col;
       ctx2.lineWidth = 5 * WIDTH;
       ctx2.beginPath();
       ctx2.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
       ctx2.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
       ctx2.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
       ctx2.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
+      ctx2.stroke();
+    }
+    function renderEmote(ctx2) {
+    }
+    function renderTriangleEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 * HEIGHT - 34 + dy);
+      ctx2.lineTo(7, -20 * HEIGHT - 24 + dy);
+      ctx2.lineTo(-7, -20 * HEIGHT - 24 + dy);
+      ctx2.closePath();
+      ctx2.stroke();
+    }
+    function renderYotaEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 * HEIGHT - 24);
+      ctx2.lineTo(0, -20 * HEIGHT - 28);
+      ctx2.moveTo(-5, -20 * HEIGHT - 34);
+      ctx2.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
+      ctx2.stroke();
+    }
+    function renderCircleEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
+      ctx2.lineTo(0, -20 * HEIGHT - 24 + dy);
+      ctx2.stroke();
+    }
+    function renderWaveEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(163,217,234,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.beginPath();
+      ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
+      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 - 3 + dy, 4, -20 * HEIGHT - 21 - 3 + dy, 7, -20 * HEIGHT - 29 - 3 + dy);
+      ctx2.moveTo(-7, -20 * HEIGHT - 29 + 3 + dy);
+      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 + 3 + dy, 4, -20 * HEIGHT - 21 + 3 + dy, 7, -20 * HEIGHT - 29 + 3 + dy);
       ctx2.stroke();
     }
     function render(ctx2) {
@@ -712,9 +785,15 @@
         const H = Math.abs(Math.cos(anim * 12)) * 2;
         renderBody(ctx2, C, S, H);
         renderFace(ctx2, C, S, H);
+        renderEmote(ctx2);
       });
     }
     function update(dT) {
+      hungerAnim += dT;
+      hunger += dT * 0.2;
+      if (hunger > 1) {
+        hunger = 0;
+      }
       let tx = 0;
       let ty = 0;
       const grim = getObjectsByTag("grim")[0];
