@@ -625,10 +625,19 @@
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     }
+    function getX() {
+      return x;
+    }
+    function getY() {
+      return y;
+    }
     self = {
       update,
       render,
       onRemove,
+      getX,
+      getY,
+      tags: ["grim"],
       order: 50
     };
     return self;
@@ -640,7 +649,8 @@
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 90;
+    let actualMotion = 0;
+    let SPEED = 70 + Math.random() * 30;
     let HEIGHT = 0.9 + Math.random() * 1;
     let WIDTH = 0.9 + Math.random() * 0.4;
     let FACE_HEIGHT = Math.random() * 8;
@@ -697,13 +707,74 @@
       });
     }
     function update(dT) {
-      anim += dT * 0.3;
-      angle += dT * 2;
+      let tx = 0;
+      let ty = 0;
+      const grim = getObjectsByTag("grim")[0];
+      if (grim) {
+        tx = grim.getX() - x;
+        ty = grim.getY() - y;
+      }
+      const M = Math.sqrt(tx * tx + ty * ty);
+      if (M > 55) {
+        tx *= SPEED / M;
+        ty *= SPEED / M;
+        vx += (tx - vx) * 3 * dT;
+        vy += (ty - vy) * 3 * dT;
+      } else {
+        vx += -vx * 5 * dT;
+        vy += -vy * 5 * dT;
+      }
+      let bx = x;
+      let by = y;
+      x += vx * dT;
+      y += vy * dT;
+      handleCollision();
+      let isMoving = false;
+      let bx2 = bx - x;
+      let by2 = by - y;
+      if (bx2 * bx2 + by2 * by2 < 10 * dT) {
+        anim += dT * (0.3 + WIDTH * 0.05);
+      } else {
+        anim += dT * (1 - HEIGHT * 0.07);
+        isMoving = true;
+      }
+      if (isMoving) {
+        angle = -Math.atan2(vy, vx);
+      } else {
+        angle += Math.cos(anim * 5) * 1 * dT;
+      }
       self.order = 50 + y / 100;
+    }
+    function handleCollision() {
+      const souls = getObjectsByTag("soul");
+      const grim = getObjectsByTag("grim")[0];
+      souls.push(grim);
+      const R = 14;
+      for (let i = 0; i < souls.length; i++) {
+        if (souls[i] == self) {
+          continue;
+        }
+        const dx = souls[i].getX() - x;
+        const dy = souls[i].getY() - y;
+        const M = Math.sqrt(dx * dx + dy * dy);
+        if (M < R + R) {
+          x = souls[i].getX() - dx / M * R * 2 + Math.random() - 0.5;
+          y = souls[i].getY() - dy / M * R * 2 + Math.random() - 0.5;
+        }
+      }
+    }
+    function getX() {
+      return x;
+    }
+    function getY() {
+      return y;
     }
     self = {
       update,
       render,
+      getX,
+      getY,
+      tags: ["soul"],
       order: 40
     };
     return self;

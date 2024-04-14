@@ -172,10 +172,16 @@ function Grim(x, y) {
         window.removeEventListener('keyup', onKeyUp);
     }
 
+    function getX() { return x; }
+    function getY() { return y; }
+
     self = {
         update,
         render,
         onRemove,
+        getX,
+        getY,
+        tags: ['grim'],
         order: 50,
     };
 
