@@ -446,7 +446,6 @@
   var ORANGE = "#FFC90E";
   var GREEN = "#22B14C";
   var BLUE = "#00A2E8";
-  var TEAL = "#99D9EA";
   var DARK_BLUE = "#3F48CC";
   var PURPLE = "#A349A4";
 
@@ -690,7 +689,7 @@
         const LW = Math.exp(-anim * 5) * 20 * Math.max(1 - anim / 2, 0);
         ctx2.lineWidth = LW;
         let R1 = 60 * r1 * (1 - Math.exp(-anim * 5)) + anim * 10;
-        ctx2.strokeStyle = TEAL;
+        ctx2.strokeStyle = RED;
         ctx2.beginPath();
         ctx2.ellipse(cx, cy + LW * 0.5, R1, R1 / 2, ang * 0.8, 0, 6.28);
         ctx2.stroke();
@@ -745,10 +744,10 @@
         B = 230;
       }
       let A = 1;
-      R = R * q + 200 * (1 - q);
-      G = G * q + 200 * (1 - q);
-      B = B * q + 200 * (1 - q);
-      A = A * q + 0.2 * (1 - q);
+      R = R * q + 250 * (1 - q);
+      G = G * q + 130 * (1 - q);
+      B = B * q + 130 * (1 - q);
+      A = A * q + 0.6 * (1 - q);
       return `rgba(${R},${G},${B},${A})`;
     }
     function getTorsoColor() {
@@ -762,10 +761,10 @@
         B = 170;
       }
       let A = 1;
-      R = R * q + 200 * (1 - q);
-      G = G * q + 200 * (1 - q);
-      B = B * q + 200 * (1 - q);
-      A = A * q + 0.2 * (1 - q);
+      R = R * q + 250 * (1 - q);
+      G = G * q + 40 * (1 - q);
+      B = B * q + 40 * (1 - q);
+      A = A * q + 0.6 * (1 - q);
       return `rgba(${R},${G},${B},${A})`;
     }
     function renderFace(ctx2, C, S, H) {
@@ -931,8 +930,14 @@
         angle += Math.cos(anim * 5) * 1 * dT;
       }
       if (desiredEmote !== null) {
-        hungerAnim += dT * hunger * 10;
         hunger += dT * 0.05;
+        if (hunger < 1) {
+          hungerAnim = 0;
+          hunger = 1;
+        }
+        if (hunger > 1) {
+          hungerAnim += dT * (hunger - 1) * 45;
+        }
         if (hunger > 2) {
           add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
           setTimeout(() => {

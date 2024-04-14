@@ -1,5 +1,5 @@
 import { retainTransform } from "./canvas";
-import { TEAL, WHITE } from "./color";
+import { RED, TEAL, WHITE } from "./color";
 
 function PoofParticle(cx, cy, ang) {
     let anim = 0;
@@ -14,7 +14,7 @@ function PoofParticle(cx, cy, ang) {
             ctx.lineWidth = LW;
             let R1 = 60 * r1 * (1 - Math.exp(-anim * 5)) + anim * 10;
             
-            ctx.strokeStyle = TEAL;
+            ctx.strokeStyle = RED;
             ctx.beginPath();
             ctx.ellipse(cx, cy+LW*0.5, R1, R1/2.0, ang*0.8, 0, 6.28);
             ctx.stroke();

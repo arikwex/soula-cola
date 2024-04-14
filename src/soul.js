@@ -42,10 +42,10 @@ function Soul(x, y) {
             B = 230;
         }
         let A = 1;
-        R = R * q + 200 * (1-q);
-        G = G * q + 200 * (1-q);
-        B = B * q + 200 * (1-q);
-        A = A * q + 0.2 * (1-q);
+        R = R * q + 250 * (1-q);
+        G = G * q + 130 * (1-q);
+        B = B * q + 130 * (1-q);
+        A = A * q + 0.6 * (1-q);
         return `rgba(${R},${G},${B},${A})`;
     }
 
@@ -61,10 +61,10 @@ function Soul(x, y) {
             B = 170;
         }
         let A = 1;
-        R = R * q + 200 * (1-q);
-        G = G * q + 200 * (1-q);
-        B = B * q + 200 * (1-q);
-        A = A * q + 0.2 * (1-q);
+        R = R * q + 250 * (1-q);
+        G = G * q + 40 * (1-q);
+        B = B * q + 40 * (1-q);
+        A = A * q + 0.6 * (1-q);
         return `rgba(${R},${G},${B},${A})`;
     }
 
@@ -257,8 +257,14 @@ function Soul(x, y) {
 
         // Emote and hunger
         if (desiredEmote !== null) {
-            hungerAnim += dT * hunger * 10;
             hunger += dT * 0.05;
+            if (hunger < 1) {
+                hungerAnim = 0;
+                hunger = 1;
+            }
+            if (hunger > 1) {
+                hungerAnim += dT * (hunger - 1) * 45;
+            }
             if (hunger > 2) {
                 add(new PoofParticle(x, y-20*HEIGHT/2));
                 setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);
