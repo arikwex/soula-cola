@@ -181,7 +181,7 @@ function Grim(x, y) {
         onRemove,
         getX,
         getY,
-        tags: ['grim'],
+        tags: ['grim', 'hitbox'],
         order: 50,
     };
 

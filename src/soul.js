@@ -230,20 +230,18 @@ function Soul(x, y) {
     }
 
     function handleCollision() {
-        const souls = getObjectsByTag('soul');
-        const grim = getObjectsByTag('grim')[0];
-        souls.push(grim);
+        const hitboxes = getObjectsByTag('hitbox');
         const R = 14;
-        for (let i = 0; i < souls.length; i++) {
-            if (souls[i] == self) {
+        for (let i = 0; i < hitboxes.length; i++) {
+            if (hitboxes[i] == self) {
                 continue;
             }
-            const dx = souls[i].getX() - x;
-            const dy = souls[i].getY() - y;
+            const dx = hitboxes[i].getX() - x;
+            const dy = hitboxes[i].getY() - y;
             const M = Math.sqrt(dx * dx + dy * dy);
             if (M < R + R) {
-                x = souls[i].getX() - dx / M * R * 2 + Math.random() - 0.5;
-                y = souls[i].getY() - dy / M * R * 2 + Math.random() - 0.5;
+                x = hitboxes[i].getX() - dx / M * R * 2 + Math.random() - 0.5;
+                y = hitboxes[i].getY() - dy / M * R * 2 + Math.random() - 0.5;
             }
         }
     }
@@ -256,7 +254,7 @@ function Soul(x, y) {
         render,
         getX,
         getY,
-        tags: ['soul'],
+        tags: ['soul', 'hitbox'],
         order: 40,
     };
 
