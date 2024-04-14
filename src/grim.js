@@ -6,7 +6,7 @@ function Grim(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 90;
+    let SPEED = 130;
     let angle = 0;
     let anim = 0;
     let keys = {};
@@ -147,6 +147,12 @@ function Grim(x, y) {
         x += vx * dT;
         y += vy * dT;
         angle = -Math.atan2(vy, vx);
+
+        const CM = Math.sqrt(x * x + y * y * 2.8);
+        if (CM > 460) {
+            x = 460 * x / CM;
+            y = 460 * y / CM;
+        }
 
         // Gateways
         const gateways = getObjectsByTag('gateway');

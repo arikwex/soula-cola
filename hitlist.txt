@@ -1,13 +1,12 @@
 HITLIST
 =======
-- Objective portals
-    - When in gateway region, become "active"
-    - type full words / in theme / longer for challenge
-- Out of bounds / squashed radial limit
+- Automatic gateway spawning (+entry animation)
+- Freed spirit counter
+- Exploded spirit counter
 - Drink Soula Cola to summon a bunch of souls
-- "meep meep meep" in desperation for their desires
 - THE Soda Animation
 - Soul manager behavior / level layout to match soda type
 - Audio + Music
+- "meep meep meep" in desperation for their desires
 - Main menu
-- Themed font
+- Themed font (monospace?)
