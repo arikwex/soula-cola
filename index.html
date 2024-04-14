@@ -53,6 +53,7 @@
       canvas.height / 800
     );
     ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
+    resort();
     retainTransform(() => {
       const camera = getObjectsByTag(TAG_CAMERA)[0];
       if (camera) {
@@ -438,6 +439,8 @@
   var LIGHT_GRAY = "#C3C3C3";
   var DARK_RED = "#880015";
   var BROWN = "#B97A57";
+  var BLUE = "#00A2E8";
+  var DARK_BLUE = "#3F48CC";
 
   // src/arena.js
   function Arena() {
@@ -467,9 +470,8 @@
   var arena_default = Arena;
 
   // src/grim.js
-  function Grim() {
-    let x = 0;
-    let y = 0;
+  function Grim(x, y) {
+    let self = null;
     let vx = 0;
     let vy = 0;
     let SPEED = 90;
@@ -604,6 +606,7 @@
       x += vx * dT;
       y += vy * dT;
       angle = -Math.atan2(vy, vx);
+      self.order = 50 + y / 100;
     }
     function onKeyDown(evt) {
       keys[evt.key] = true;
@@ -622,19 +625,98 @@
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     }
-    return {
+    self = {
       update,
       render,
       onRemove,
       order: 50
     };
+    return self;
   }
   var grim_default = Grim;
+
+  // src/soul.js
+  function Soul(x, y) {
+    let self = null;
+    let vx = 0;
+    let vy = 0;
+    let SPEED = 90;
+    let HEIGHT = 0.9 + Math.random() * 1;
+    let WIDTH = 0.9 + Math.random() * 0.4;
+    let FACE_HEIGHT = Math.random() * 8;
+    let FACE_WIDTH = Math.random() * 2.3 + 1.7;
+    let FACE_PLACE = -1 + Math.random() * 8;
+    let angle = Math.random() * 7;
+    let anim = Math.random() * 100;
+    function renderFace(ctx2, C, S, H) {
+      ctx2.strokeStyle = BLUE;
+      S -= 0.2;
+      if (S < 0) {
+        const wd = Math.max(Math.min(-16 * S, 14), 0);
+        const s = (14 - wd) * 0.5;
+        ctx2.lineWidth = wd * WIDTH;
+        ctx2.beginPath();
+        ctx2.moveTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT - s * 0.7 - 6);
+        ctx2.lineTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT + s * 0.7 - 2 + FACE_HEIGHT);
+        ctx2.stroke();
+        ctx2.strokeStyle = WHITE;
+        ctx2.lineWidth = 3 * wd / 14;
+        ctx2.beginPath();
+        ctx2.moveTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
+        ctx2.lineTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
+        ctx2.moveTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
+        ctx2.lineTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
+        ctx2.stroke();
+      }
+    }
+    function renderBody(ctx2, C, H) {
+      ctx2.fillStyle = DARK_BLUE;
+      ctx2.strokeStyle = DARK_BLUE;
+      const Q = H * 3;
+      ctx2.lineWidth = 16 * WIDTH + Q;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -5 - Q * WIDTH * 0.5 - WIDTH * 2);
+      ctx2.lineTo(0, (-20 + H * 2) * HEIGHT);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.lineWidth = 18 * WIDTH;
+      ctx2.beginPath();
+      ctx2.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
+      ctx2.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
+      ctx2.stroke();
+    }
+    function render(ctx2) {
+      retainTransform(() => {
+        ctx2.translate(x, y);
+        const C = Math.cos(angle);
+        const S = Math.sin(angle);
+        const H = Math.abs(Math.cos(anim * 12)) * 2;
+        renderBody(ctx2, C, H);
+        renderFace(ctx2, C, S, H);
+      });
+    }
+    function update(dT) {
+      anim += dT * 0.3;
+      angle += dT * 2;
+      self.order = 50 + y / 100;
+    }
+    self = {
+      update,
+      render,
+      order: 40
+    };
+    return self;
+  }
+  var soul_default = Soul;
 
   // src/main.js
   function initialize() {
     add(new arena_default());
-    add(new grim_default());
+    add(new grim_default(0, 0));
+    for (let i = 0; i < 6; i++) {
+      add(new soul_default(-50 - 35 * i, 0));
+    }
     audio_default().init();
   }
   initialize();

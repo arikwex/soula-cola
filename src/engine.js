@@ -21,7 +21,7 @@ function tick(currentFrameMs) {
         canvas.height / 800,
     );
     ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
-    
+    resort();
     retainTransform(() => {
         const camera = getObjectsByTag(TAG_CAMERA)[0];
         if (camera) {

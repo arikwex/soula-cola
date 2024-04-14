@@ -1,9 +1,8 @@
 import { retainTransform } from "./canvas";
 import { BLACK, BROWN, DARK_ORANGE, DARK_RED, GRAY, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, WHITE } from "./color";
 
-function Grim() {
-    let x = 0;
-    let y = 0;
+function Grim(x, y) {
+    let self = null;
     let vx = 0;
     let vy = 0;
     let SPEED = 90;
@@ -147,6 +146,8 @@ function Grim() {
         x += vx * dT;
         y += vy * dT;
         angle = -Math.atan2(vy, vx);
+
+        self.order = 50 + y / 100;
     }
 
     function onKeyDown(evt) {
@@ -171,12 +172,14 @@ function Grim() {
         window.removeEventListener('keyup', onKeyUp);
     }
 
-    return {
+    self = {
         update,
         render,
         onRemove,
         order: 50,
     };
+
+    return self;
 }
 
 export default Grim;
