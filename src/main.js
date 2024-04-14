@@ -13,10 +13,8 @@ function initialize() {
     add(new Arena());
     add(new SoulManager());
     add(new Interaction());
-    // add(new Gateway(0, -100, EMOTE.TRIANGLE));
-    // add(new Gateway(140, 100, EMOTE.WAVE));
     add(new Grim(0, 0));
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 16; i++) {
         add(new Soul(-50 - 15 * i, Math.cos(i * 2) * 20));
     }
 

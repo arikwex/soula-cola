@@ -7,6 +7,7 @@ function SoulManager() {
     let soulRequests = new Map();
     let tick = 0;
     let availableEmotes = [EMOTE.TRIANGLE, EMOTE.YOTA, EMOTE.CIRCLE, EMOTE.WAVE];
+    let gatewayHistory = [];
 
     function assignSoulEmote(soul, emote) {
         if (soul == null) {
@@ -52,12 +53,32 @@ function SoulManager() {
         return availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
     }
 
+    function getGatewayRandomEmote() {
+        let filteredEmotes = availableEmotes.filter((e) => {
+            let count = 0;
+            for (let i = 0; i < gatewayHistory.length; i++) {
+                if (gatewayHistory[i] == e) {
+                    count += 1;
+                }
+            }
+            return count < 2;
+        });
+        if (filteredEmotes.length == 0) {
+            filteredEmotes = availableEmotes;
+        }
+        return filteredEmotes[Math.floor(Math.random() * filteredEmotes.length)];
+    }
+
     function getNumGateways() {
         return getObjectsByTag('gateway').length;
     }
 
     function spawnRandomGateway() {
-        const emote = getRandomEmote();
+        const emote = getGatewayRandomEmote();
+        gatewayHistory.push(emote);
+        if (gatewayHistory.length > 6) {
+            gatewayHistory.shift();
+        }
         const gateways = getObjectsByTag('gateway');
         let sx = 0;
         let sy = 0;
