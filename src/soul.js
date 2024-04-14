@@ -9,7 +9,7 @@ function Soul(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 40 + Math.random() * 110;
+    let SPEED = 70 + Math.random() * 40;
     
     let HEIGHT = 0.9 + Math.random() * 1.0; // 0.9 - 1.9
     let WIDTH = 0.9 + Math.random() * 0.4; // 0.9 - 1.3

@@ -7,6 +7,7 @@ HITLIST
 - THE Soda Animation
 - Soul manager behavior / level layout to match soda type
 - Audio + Music
+- Visual for mis-type
 - "meep meep meep" in desperation for their desires
 - Main menu
 - Themed font (monospace?)

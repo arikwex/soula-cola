@@ -442,6 +442,7 @@
   var LIGHT_GRAY = "#C3C3C3";
   var DARK_RED = "#880015";
   var BROWN = "#B97A57";
+  var RED = "#ED1C24";
   var ORANGE = "#FFC90E";
   var GREEN = "#22B14C";
   var TEAL = "#99D9EA";
@@ -716,7 +717,7 @@
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 40 + Math.random() * 110;
+    let SPEED = 70 + Math.random() * 40;
     let HEIGHT = 0.9 + Math.random() * 1;
     let WIDTH = 0.9 + Math.random() * 0.4;
     let FACE_HEIGHT = Math.random() * 8;
@@ -1001,73 +1002,6 @@
   }
   var soul_default = Soul;
 
-  // src/soul-manager.js
-  function SoulManager() {
-    let soulRequests = /* @__PURE__ */ new Map();
-    let tick2 = 0;
-    let availableEmotes = [EMOTE.TRIANGLE, EMOTE.YOTA, EMOTE.CIRCLE, EMOTE.WAVE];
-    function assignSoulEmote(soul, emote) {
-      if (soul == null) {
-        return;
-      }
-      soulRequests.set(soul, {
-        emote,
-        time: Date.now()
-      });
-      emit("assign-emote", { soul, emote });
-    }
-    function getSoulEmote(soul) {
-      return soulRequests.get(soul);
-    }
-    function isSoulAssigned(soul) {
-      return getSoulEmote(soul) !== void 0;
-    }
-    function getNumAssignments() {
-      return soulRequests.size;
-    }
-    function clearAssignement(soul) {
-      return soulRequests.delete(soul);
-    }
-    function clearAll() {
-      soulRequests.clear();
-    }
-    function getRandomFreeSoul() {
-      const souls = getObjectsByTag("soul");
-      const freeSouls = souls.filter((x) => !isSoulAssigned(x));
-      if (freeSouls.length == 0) {
-        return null;
-      }
-      return freeSouls[Math.floor(Math.random() * freeSouls.length)];
-    }
-    function getRandomEmote() {
-      return availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
-    }
-    function render(ctx2) {
-    }
-    function update(dT) {
-      tick2 += dT;
-      if (tick2 < 1) {
-        return;
-      }
-      tick2 -= 1;
-      const numAssignments = getNumAssignments();
-      if (numAssignments == 0) {
-        assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
-      } else {
-        if (Math.random() > 0.5) {
-          assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
-        }
-      }
-    }
-    return {
-      update,
-      render,
-      tags: ["soul-manager"],
-      order: 0
-    };
-  }
-  var soul_manager_default = SoulManager;
-
   // src/gateway.js
   function Gateway(cx, cy, emote) {
     let activeTimer = 0;
@@ -1156,6 +1090,11 @@
       const dy = ty - cy;
       return dx * dx + dy * dy * 2 < 65 * 65;
     }
+    function isTooCloseToGate(tx, ty) {
+      const dx = tx - cx;
+      const dy = ty - cy;
+      return dx * dx + dy * dy * 2 < 130 * 130;
+    }
     function refreshActive() {
       activeTimer = 0.2;
     }
@@ -1175,6 +1114,7 @@
       update,
       render,
       inRegion,
+      isTooCloseToGate,
       refreshActive,
       getX,
       getY,
@@ -1185,6 +1125,105 @@
     };
   }
   var gateway_default = Gateway;
+
+  // src/soul-manager.js
+  function SoulManager() {
+    let soulRequests = /* @__PURE__ */ new Map();
+    let tick2 = 0;
+    let availableEmotes = [EMOTE.TRIANGLE, EMOTE.YOTA, EMOTE.CIRCLE, EMOTE.WAVE];
+    function assignSoulEmote(soul, emote) {
+      if (soul == null) {
+        return;
+      }
+      soulRequests.set(soul, {
+        emote,
+        time: Date.now()
+      });
+      emit("assign-emote", { soul, emote });
+    }
+    function getSoulEmote(soul) {
+      return soulRequests.get(soul);
+    }
+    function isSoulAssigned(soul) {
+      return getSoulEmote(soul) !== void 0;
+    }
+    function getNumAssignments() {
+      return soulRequests.size;
+    }
+    function clearAssignement(soul) {
+      return soulRequests.delete(soul);
+    }
+    function clearAll() {
+      soulRequests.clear();
+    }
+    function getRandomFreeSoul() {
+      const souls = getObjectsByTag("soul");
+      const freeSouls = souls.filter((x) => !isSoulAssigned(x));
+      if (freeSouls.length == 0) {
+        return null;
+      }
+      return freeSouls[Math.floor(Math.random() * freeSouls.length)];
+    }
+    function getRandomEmote() {
+      return availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
+    }
+    function getNumGateways() {
+      return getObjectsByTag("gateway").length;
+    }
+    function spawnRandomGateway() {
+      const emote = getRandomEmote();
+      const gateways = getObjectsByTag("gateway");
+      let sx = 0;
+      let sy = 0;
+      for (let i = 0; i < 200; i++) {
+        sx = (Math.random() - 0.5) * 800;
+        sy = (Math.random() - 0.5) * 600;
+        const CM = Math.sqrt(sx * sx + sy * sy * 2.8);
+        if (CM > 390) {
+          sx = 390 * sx / CM;
+          sy = 390 * sy / CM;
+        }
+        let isValid = true;
+        for (let j = 0; j < gateways.length; j++) {
+          if (gateways[j].isTooCloseToGate(sx, sy)) {
+            isValid = false;
+            break;
+          }
+        }
+        if (isValid) {
+          break;
+        }
+      }
+      add(new gateway_default(sx, sy, emote));
+    }
+    function render(ctx2) {
+    }
+    function update(dT) {
+      tick2 += dT;
+      if (tick2 < 1) {
+        return;
+      }
+      tick2 -= 1;
+      const numAssignments = getNumAssignments();
+      if (numAssignments == 0) {
+        assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+      } else {
+        if (Math.random() > 0.75) {
+          assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+        }
+      }
+      if (getNumGateways() < availableEmotes.length) {
+        spawnRandomGateway();
+      }
+    }
+    return {
+      update,
+      render,
+      tags: ["soul-manager"],
+      order: 0
+    };
+  }
+  var soul_manager_default = SoulManager;
 
   // src/hex-particle.js
   function HexParticle(cx, cy, emote) {
@@ -1385,8 +1424,6 @@
     add(new arena_default());
     add(new soul_manager_default());
     add(new interaction_default());
-    add(new gateway_default(0, -100, EMOTE.TRIANGLE));
-    add(new gateway_default(140, 100, EMOTE.WAVE));
     add(new grim_default(0, 0));
     for (let i = 0; i < 6; i++) {
       add(new soul_default(-50 - 15 * i, Math.cos(i * 2) * 20));

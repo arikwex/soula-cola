@@ -1,6 +1,7 @@
 import * as bus from './bus';
 import { EMOTE } from "./emote-enum";
-import { getObjectsByTag } from "./engine";
+import { add, getObjectsByTag } from "./engine";
+import Gateway from './gateway';
 
 function SoulManager() {
     let soulRequests = new Map();
@@ -51,6 +52,37 @@ function SoulManager() {
         return availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
     }
 
+    function getNumGateways() {
+        return getObjectsByTag('gateway').length;
+    }
+
+    function spawnRandomGateway() {
+        const emote = getRandomEmote();
+        const gateways = getObjectsByTag('gateway');
+        let sx = 0;
+        let sy = 0;
+        for (let i = 0; i < 200; i++ ) {
+            sx = (Math.random() - 0.5) * 800;
+            sy = (Math.random() - 0.5) * 600;
+            const CM = Math.sqrt(sx * sx + sy * sy * 2.8);
+            if (CM > 390) {
+                sx = 390 * sx / CM;
+                sy = 390 * sy / CM;
+            }
+            let isValid = true;
+            for (let j = 0; j < gateways.length; j++) {
+                if (gateways[j].isTooCloseToGate(sx, sy)) {
+                    isValid = false;
+                    break;
+                }
+            }
+            if (isValid) {
+                break;
+            }
+        }
+        add(new Gateway(sx, sy, emote));
+    }
+
     function render(ctx) {
     }
 
@@ -62,14 +94,19 @@ function SoulManager() {
         }
         tick -= 1;
 
-        // Logic
+        // Logic for emote assignment
         const numAssignments = getNumAssignments();
         if (numAssignments == 0) {
             assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
         } else {
-            if (Math.random() > 0.5) {
+            if (Math.random() > 0.75) {
                 assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
             }
+        }
+
+        // Logic for gateway spawn
+        if (getNumGateways() < availableEmotes.length) {
+            spawnRandomGateway();
         }
     }
 

@@ -1,5 +1,5 @@
 import { retainTransform } from "./canvas";
-import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, TAN, WHITE, YELLOW } from "./color";
+import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, RED, TAN, WHITE, YELLOW } from "./color";
 import { EMOTE } from "./emote-enum";
 
 function Gateway(cx, cy, emote) {
@@ -89,6 +89,12 @@ function Gateway(cx, cy, emote) {
         return dx * dx + (dy * dy) * 2 < 65 * 65;
     }
 
+    function isTooCloseToGate(tx, ty) {
+        const dx = tx - cx;
+        const dy = ty - cy;
+        return dx * dx + (dy * dy) * 2 < 130 * 130;
+    }
+
     function refreshActive() {
         activeTimer = 0.2;
     }
@@ -102,6 +108,7 @@ function Gateway(cx, cy, emote) {
         update,
         render,
         inRegion,
+        isTooCloseToGate,
         refreshActive,
         getX,
         getY,
