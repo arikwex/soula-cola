@@ -36,7 +36,7 @@ function Soul(x, y) {
         let R = 0;
         let G = 162;
         let B = 232;
-        if (activeGateway != null) {
+        if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
             R = 255;
             G = 255;
             B = 230;
@@ -55,7 +55,7 @@ function Soul(x, y) {
         let R = 63;
         let G = 72;
         let B = 204;
-        if (activeGateway != null) {
+        if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
             R = 255;
             G = 230;
             B = 170;

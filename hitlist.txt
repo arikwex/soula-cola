@@ -1,6 +1,6 @@
 HITLIST
 =======
-- Automatic gateway spawning (+entry animation)
+- Controlled randomness
 - Freed spirit counter
 - Exploded spirit counter
 - Drink Soula Cola to summon a bunch of souls

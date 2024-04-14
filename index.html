@@ -737,7 +737,7 @@
       let R = 0;
       let G = 162;
       let B = 232;
-      if (activeGateway != null) {
+      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
         R = 255;
         G = 255;
         B = 230;
@@ -754,7 +754,7 @@
       let R = 63;
       let G = 72;
       let B = 204;
-      if (activeGateway != null) {
+      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
         R = 255;
         G = 230;
         B = 170;
@@ -1005,42 +1005,63 @@
   // src/gateway.js
   function Gateway(cx, cy, emote) {
     let activeTimer = 0;
+    let spawningAnim = 0;
     function render(ctx2) {
       retainTransform(() => {
-        ctx2.lineWidth = 5;
-        if (emote == EMOTE.TRIANGLE)
-          renderTriangleEmote(ctx2);
-        if (emote == EMOTE.YOTA)
-          renderYotaEmote(ctx2);
-        if (emote == EMOTE.CIRCLE)
-          renderCircleEmote(ctx2);
-        if (emote == EMOTE.WAVE)
-          renderWaveEmote(ctx2);
-        if (activeTimer > 0) {
+        if (spawningAnim > 0.5) {
+          ctx2.lineWidth = 5;
           if (emote == EMOTE.TRIANGLE)
-            ctx2.strokeStyle = ORANGE;
+            renderTriangleEmote(ctx2);
           if (emote == EMOTE.YOTA)
-            ctx2.strokeStyle = GREEN;
+            renderYotaEmote(ctx2);
           if (emote == EMOTE.CIRCLE)
-            ctx2.strokeStyle = RED;
+            renderCircleEmote(ctx2);
           if (emote == EMOTE.WAVE)
-            ctx2.strokeStyle = PURPLE;
-        } else {
-          ctx2.strokeStyle = LIGHT_GRAY;
+            renderWaveEmote(ctx2);
+          if (activeTimer > 0) {
+            if (emote == EMOTE.TRIANGLE)
+              ctx2.strokeStyle = ORANGE;
+            if (emote == EMOTE.YOTA)
+              ctx2.strokeStyle = GREEN;
+            if (emote == EMOTE.CIRCLE)
+              ctx2.strokeStyle = RED;
+            if (emote == EMOTE.WAVE)
+              ctx2.strokeStyle = PURPLE;
+          } else {
+            ctx2.strokeStyle = LIGHT_GRAY;
+          }
+          ctx2.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const dx = Math.cos(i / 6 * 6.28) * 70;
+            const dy = Math.sin(i / 6 * 6.28) * 70 / 2;
+            if (i == 0)
+              ctx2.moveTo(cx + dx, cy + dy);
+            else
+              ctx2.lineTo(cx + dx, cy + dy);
+          }
+          ctx2.closePath();
+          ctx2.moveTo(cx + 55, cy);
+          ctx2.ellipse(cx, cy, 55, 55 / 2, 0, 0, 6.28);
+          ctx2.stroke();
         }
-        ctx2.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const dx = Math.cos(i / 6 * 6.28) * 70;
-          const dy = Math.sin(i / 6 * 6.28) * 70 / 2;
-          if (i == 0)
+        if (spawningAnim < 1) {
+          const S = 1.1 - 1.1 * Math.exp(-spawningAnim * 4);
+          const H = 1 * Math.exp(-spawningAnim * 5) + 0.02;
+          const alpha = Math.min(spawningAnim * 2, 1) * Math.min(Math.max(5 - spawningAnim * 5, 0), 1);
+          ctx2.fillStyle = `rgba(255,255,255,${alpha})`;
+          for (let i = 0; i < 6; i++) {
+            ctx2.beginPath();
+            const dx = Math.cos(i / 6 * 6.28) * 70 * S;
+            const dy = Math.sin(i / 6 * 6.28) * 70 / 2 * S;
+            const dx2 = Math.cos((i + 1) / 6 * 6.28) * 70 * S;
+            const dy2 = Math.sin((i + 1) / 6 * 6.28) * 70 / 2 * S;
             ctx2.moveTo(cx + dx, cy + dy);
-          else
-            ctx2.lineTo(cx + dx, cy + dy);
+            ctx2.lineTo(cx + dx2, cy + dy2);
+            ctx2.lineTo(cx + dx2, cy + dy2 - 400 * H);
+            ctx2.lineTo(cx + dx, cy + dy - 400 * H);
+            ctx2.fill();
+          }
         }
-        ctx2.closePath();
-        ctx2.moveTo(cx + 55, cy);
-        ctx2.ellipse(cx, cy, 55, 55 / 2, 0, 0, 6.28);
-        ctx2.stroke();
       });
     }
     function renderTriangleEmote(ctx2) {
@@ -1084,11 +1105,12 @@
     }
     function update(dT) {
       activeTimer -= dT;
+      spawningAnim += dT;
     }
     function inRegion(tx, ty) {
       const dx = tx - cx;
       const dy = ty - cy;
-      return dx * dx + dy * dy * 2 < 65 * 65;
+      return spawningAnim > 1 && dx * dx + dy * dy * 2 < 65 * 65;
     }
     function isTooCloseToGate(tx, ty) {
       const dx = tx - cx;
