@@ -1,5 +1,5 @@
 import { retainTransform } from "./canvas";
-import { BLACK, DARK_BLUE, GRAY, LIGHT_GRAY, RED, TEAL, WHITE, YELLOW } from "./color";
+import { TEAL, WHITE } from "./color";
 
 function PoofParticle(cx, cy, ang) {
     let anim = 0;

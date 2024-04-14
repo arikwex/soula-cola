@@ -231,7 +231,7 @@ function Soul(x, y) {
         // Emote and hunger
         if (desiredEmote !== null) {
             hungerAnim += dT * hunger * 10;
-            hunger += dT * 1;//0.05;
+            hunger += dT * 0.05;
             if (hunger > 2) {
                 add(new PoofParticle(x, y-20*HEIGHT/2));
                 setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);

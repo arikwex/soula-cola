@@ -1,15 +1,10 @@
 HITLIST
 =======
-- Soul request system (own manager)
-    - There is a pool of emotes to choose from
-    - If no souls have an opinion yet, form an opinion
-    - If souls do have an opinion, form a new opinion after some time
-    - As you've held an opinion for too long, start to decay.
-    - If you reach a portal, you become freed.
-    - Not satiated after too long => poooof
 - Objective portals
     - type full words / in theme / longer for challenge
 - Out of bounds / squashed radial limit
 - Drink Soula Cola to summon a bunch of souls
 - "meep meep meep" in desperation for their desires
 - THE Soda Animation
+- Soul manager behavior / level layout to match soda type
+- Audio + Music
