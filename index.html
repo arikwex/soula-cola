@@ -442,6 +442,7 @@
   var LIGHT_GRAY = "#C3C3C3";
   var DARK_RED = "#880015";
   var BROWN = "#B97A57";
+  var TEAL = "#99D9EA";
 
   // src/arena.js
   function Arena() {
@@ -653,6 +654,42 @@
     WAVE: 3
   };
 
+  // src/poof-particle.js
+  function PoofParticle(cx, cy, ang) {
+    let anim = 0;
+    let r1 = Math.random() * 0.6 + 0.9;
+    if (!ang) {
+      ang = Math.random() * 3 - 1.5;
+    }
+    function render(ctx2) {
+      retainTransform(() => {
+        const LW = Math.exp(-anim * 5) * 20 * Math.max(1 - anim / 2, 0);
+        ctx2.lineWidth = LW;
+        let R1 = 60 * r1 * (1 - Math.exp(-anim * 5)) + anim * 10;
+        ctx2.strokeStyle = TEAL;
+        ctx2.beginPath();
+        ctx2.ellipse(cx, cy + LW * 0.5, R1, R1 / 2, ang * 0.8, 0, 6.28);
+        ctx2.stroke();
+        ctx2.strokeStyle = WHITE;
+        ctx2.beginPath();
+        ctx2.ellipse(cx, cy, R1, R1 / 2, ang, 0, 6.28);
+        ctx2.stroke();
+      });
+    }
+    function update(dT) {
+      anim += dT;
+      if (anim > 2) {
+        return true;
+      }
+    }
+    return {
+      update,
+      render,
+      order: 100
+    };
+  }
+  var poof_particle_default = PoofParticle;
+
   // src/soul.js
   function Soul(x, y) {
     let self = null;
@@ -844,9 +881,13 @@
       }
       if (desiredEmote !== null) {
         hungerAnim += dT * hunger * 10;
-        hunger += dT * 0.05;
+        hunger += dT * 1;
         if (hunger > 2) {
-          hunger = 2;
+          add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
+          setTimeout(() => {
+            add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
+          }, Math.random() * 100 + 50);
+          return true;
         }
       }
       self.order = 50 + y / 100;

@@ -2,7 +2,8 @@ import * as bus from './bus';
 import { retainTransform } from "./canvas";
 import { WHITE } from "./color";
 import { EMOTE } from "./emote-enum";
-import { getObjectsByTag } from "./engine";
+import { add, getObjectsByTag } from "./engine";
+import PoofParticle from './poof-particle';
 
 function Soul(x, y) {
     let self = null;
@@ -230,9 +231,11 @@ function Soul(x, y) {
         // Emote and hunger
         if (desiredEmote !== null) {
             hungerAnim += dT * hunger * 10;
-            hunger += dT * 0.05;
+            hunger += dT * 1;//0.05;
             if (hunger > 2) {
-                hunger = 2;
+                add(new PoofParticle(x, y-20*HEIGHT/2));
+                setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);
+                return true;
             }
         }
 
