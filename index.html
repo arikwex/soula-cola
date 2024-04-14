@@ -4,6 +4,9 @@
   function on(e, handler) {
     (HANDLES[e] || (HANDLES[e] = [])).push(handler);
   }
+  function off(e, handler) {
+    HANDLES[e] = (HANDLES[e] || []).filter((x) => x != handler);
+  }
   function emit(e, data) {
     (HANDLES[e] || []).map((handler) => handler(data));
   }
@@ -655,7 +658,7 @@
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 70 + Math.random() * 30;
+    let SPEED = 50 + Math.random() * 60;
     let HEIGHT = 0.9 + Math.random() * 1;
     let WIDTH = 0.9 + Math.random() * 0.4;
     let FACE_HEIGHT = Math.random() * 8;
@@ -663,11 +666,14 @@
     let FACE_PLACE = -1 + Math.random() * 8;
     let angle = Math.random() * 7;
     let anim = Math.random() * 100;
-    let desiredEmote = EMOTE.CIRCLE;
+    let desiredEmote = null;
     let hunger = 0;
     let hungerAnim = Math.random() * 100;
+    function getFadeFactor() {
+      return 1 - Math.max(hunger - 1, 0);
+    }
     function getFaceColor() {
-      let q = 1 - hunger + Math.cos(hungerAnim * 4) * 0.1;
+      let q = getFadeFactor();
       let R = 0;
       let G = 162;
       let B = 232;
@@ -675,11 +681,11 @@
       R = R * q + 200 * (1 - q);
       G = G * q + 200 * (1 - q);
       B = B * q + 200 * (1 - q);
-      A = A * q + 0.1 * (1 - q);
+      A = A * q + 0.2 * (1 - q);
       return `rgba(${R},${G},${B},${A})`;
     }
     function getTorsoColor() {
-      let q = 1 - hunger + Math.cos(hungerAnim * 4) * 0.1;
+      let q = getFadeFactor();
       let R = 63;
       let G = 72;
       let B = 204;
@@ -687,7 +693,7 @@
       R = R * q + 200 * (1 - q);
       G = G * q + 200 * (1 - q);
       B = B * q + 200 * (1 - q);
-      A = A * q + 0.1 * (1 - q);
+      A = A * q + 0.2 * (1 - q);
       return `rgba(${R},${G},${B},${A})`;
     }
     function renderFace(ctx2, C, S, H) {
@@ -738,9 +744,20 @@
       ctx2.stroke();
     }
     function renderEmote(ctx2) {
+      if (desiredEmote != null) {
+        if (desiredEmote == EMOTE.TRIANGLE) {
+          renderTriangleEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.YOTA) {
+          renderYotaEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.CIRCLE) {
+          renderCircleEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.WAVE) {
+          renderWaveEmote(ctx2, 0);
+        }
+      }
     }
     function renderTriangleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
       ctx2.lineWidth = 3;
       ctx2.beginPath();
       ctx2.moveTo(0, -20 * HEIGHT - 34 + dy);
@@ -750,7 +767,7 @@
       ctx2.stroke();
     }
     function renderYotaEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
       ctx2.lineWidth = 3;
       ctx2.beginPath();
       ctx2.moveTo(0, -20 * HEIGHT - 24);
@@ -760,7 +777,7 @@
       ctx2.stroke();
     }
     function renderCircleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
       ctx2.lineWidth = 3;
       ctx2.beginPath();
       ctx2.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
@@ -768,7 +785,7 @@
       ctx2.stroke();
     }
     function renderWaveEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(163,217,234,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+      ctx2.strokeStyle = `rgba(163,217,234,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
       ctx2.lineWidth = 3;
       ctx2.beginPath();
       ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
@@ -789,11 +806,6 @@
       });
     }
     function update(dT) {
-      hungerAnim += dT;
-      hunger += dT * 0.2;
-      if (hunger > 1) {
-        hunger = 0;
-      }
       let tx = 0;
       let ty = 0;
       const grim = getObjectsByTag("grim")[0];
@@ -830,6 +842,13 @@
       } else {
         angle += Math.cos(anim * 5) * 1 * dT;
       }
+      if (desiredEmote !== null) {
+        hungerAnim += dT * hunger * 10;
+        hunger += dT * 0.05;
+        if (hunger > 2) {
+          hunger = 2;
+        }
+      }
       self.order = 50 + y / 100;
     }
     function handleCollision() {
@@ -854,11 +873,22 @@
     function getY() {
       return y;
     }
+    function onAssignEmote({ soul, emote }) {
+      if (self !== soul) {
+        return;
+      }
+      desiredEmote = emote;
+    }
+    on("assign-emote", onAssignEmote);
+    function onRemove() {
+      off("assign-emote", onAssignEmote);
+    }
     self = {
       update,
       render,
       getX,
       getY,
+      onRemove,
       tags: ["soul", "hitbox"],
       order: 40
     };
@@ -866,12 +896,80 @@
   }
   var soul_default = Soul;
 
+  // src/soul-manager.js
+  function SoulManager() {
+    let soulRequests = /* @__PURE__ */ new Map();
+    let tick2 = 0;
+    let availableEmotes = [EMOTE.TRIANGLE, EMOTE.YOTA, EMOTE.CIRCLE, EMOTE.WAVE];
+    function assignSoulEmote(soul, emote) {
+      if (soul == null) {
+        return;
+      }
+      soulRequests.set(soul, {
+        emote,
+        time: Date.now()
+      });
+      emit("assign-emote", { soul, emote });
+    }
+    function getSoulEmote(soul) {
+      return soulRequests.get(soul);
+    }
+    function isSoulAssigned(soul) {
+      return getSoulEmote(soul) !== void 0;
+    }
+    function getNumAssignments() {
+      return soulRequests.size;
+    }
+    function clearAssignement(soul) {
+      return soulRequests.delete(soul);
+    }
+    function clearAll() {
+      soulRequests.clear();
+    }
+    function getRandomFreeSoul() {
+      const souls = getObjectsByTag("soul");
+      const freeSouls = souls.filter((x) => !isSoulAssigned(x));
+      if (freeSouls.length == 0) {
+        return null;
+      }
+      return freeSouls[Math.floor(Math.random() * freeSouls.length)];
+    }
+    function getRandomEmote() {
+      return availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
+    }
+    function render(ctx2) {
+    }
+    function update(dT) {
+      tick2 += dT;
+      if (tick2 < 1) {
+        return;
+      }
+      tick2 -= 1;
+      const numAssignments = getNumAssignments();
+      if (numAssignments == 0) {
+        assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+      } else {
+        if (Math.random() > 0.5) {
+          assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+        }
+      }
+    }
+    return {
+      update,
+      render,
+      tags: ["soul-manager"],
+      order: 0
+    };
+  }
+  var soul_manager_default = SoulManager;
+
   // src/main.js
   function initialize() {
     add(new arena_default());
+    add(new soul_manager_default());
     add(new grim_default(0, 0));
     for (let i = 0; i < 6; i++) {
-      add(new soul_default(-50 - 35 * i, 0));
+      add(new soul_default(-50 - 15 * i, Math.cos(i * 2) * 20));
     }
     audio_default().init();
   }

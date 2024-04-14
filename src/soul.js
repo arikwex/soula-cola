@@ -1,5 +1,6 @@
+import * as bus from './bus';
 import { retainTransform } from "./canvas";
-import { BLACK, BLUE, BROWN, DARK_BLUE, DARK_ORANGE, DARK_RED, GHOST, GRAY, GRAY_BLUE, GREEN, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, RED, TAN, TEAL, WHITE } from "./color";
+import { WHITE } from "./color";
 import { EMOTE } from "./emote-enum";
 import { getObjectsByTag } from "./engine";
 
@@ -7,7 +8,7 @@ function Soul(x, y) {
     let self = null;
     let vx = 0;
     let vy = 0;
-    let SPEED = 70 + Math.random() * 30;
+    let SPEED = 50 + Math.random() * 60;
     
     let HEIGHT = 0.9 + Math.random() * 1.0; // 0.9 - 1.9
     let WIDTH = 0.9 + Math.random() * 0.4; // 0.9 - 1.3
@@ -18,13 +19,17 @@ function Soul(x, y) {
     let angle = Math.random() * 7;
     let anim = Math.random() * 100;
 
-    let desiredEmote = EMOTE.CIRCLE;
+    let desiredEmote = null;
     let hunger = 0;
     let hungerAnim = Math.random() * 100;
 
+    function getFadeFactor() {
+        return (1-Math.max(hunger - 1, 0));
+    }
+
     function getFaceColor() {
         // 00A2E8
-        let q = (1-hunger) + Math.cos(hungerAnim * 4) * 0.1;
+        let q = getFadeFactor();
         let R = 0;
         let G = 162;
         let B = 232;
@@ -32,13 +37,13 @@ function Soul(x, y) {
         R = R * q + 200 * (1-q);
         G = G * q + 200 * (1-q);
         B = B * q + 200 * (1-q);
-        A = A * q + 0.1 * (1-q);
+        A = A * q + 0.2 * (1-q);
         return `rgba(${R},${G},${B},${A})`;
     }
 
     function getTorsoColor() {
         // 3F48CC
-        let q = (1-hunger) + Math.cos(hungerAnim * 4) * 0.1;
+        let q = getFadeFactor();
         let R = 63;
         let G = 72;
         let B = 204;
@@ -46,7 +51,7 @@ function Soul(x, y) {
         R = R * q + 200 * (1-q);
         G = G * q + 200 * (1-q);
         B = B * q + 200 * (1-q);
-        A = A * q + 0.1 * (1-q);
+        A = A * q + 0.2 * (1-q);
         return `rgba(${R},${G},${B},${A})`;
     }
 
@@ -109,14 +114,16 @@ function Soul(x, y) {
 
     function renderEmote(ctx) {
         // Emote
-        // renderYotaEmote(ctx, 0);
-        // renderTriangleEmote(ctx, -15);
-        // renderCircleEmote(ctx, -30);
-        // renderWaveEmote(ctx,-45);
+        if (desiredEmote != null) {
+            if (desiredEmote == EMOTE.TRIANGLE) { renderTriangleEmote(ctx, 0); }
+            else if (desiredEmote == EMOTE.YOTA) { renderYotaEmote(ctx, 0); }
+            else if (desiredEmote == EMOTE.CIRCLE) { renderCircleEmote(ctx, 0); }
+            else if (desiredEmote == EMOTE.WAVE) { renderWaveEmote(ctx, 0); }
+        }
     }
 
     function renderTriangleEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(255,192,14,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, -20 * HEIGHT - 34 + dy);
@@ -127,7 +134,7 @@ function Soul(x, y) {
     }
 
     function renderYotaEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(34,200,15,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, -20 * HEIGHT - 24);
@@ -138,7 +145,7 @@ function Soul(x, y) {
     }
 
     function renderCircleEmote(ctx, dy) {
-        ctx.strokeStyle = `rgba(237,28,38,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
@@ -148,7 +155,7 @@ function Soul(x, y) {
 
     function renderWaveEmote(ctx, dy) {
         // ctx.strokeStyle = TEAL; // 99D9EA
-        ctx.strokeStyle = `rgba(163,217,234,${Math.cos(anim * 10) * 0.5 + 0.5})`;
+        ctx.strokeStyle = `rgba(163,217,234,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(-7, -20 * HEIGHT - 29-3+dy);
@@ -173,12 +180,6 @@ function Soul(x, y) {
     }
 
     function update(dT) {
-        hungerAnim += dT;
-        hunger += dT * 0.2;
-        if (hunger > 1) {
-            hunger = 0;
-        }
-        
         let tx = 0;
         let ty = 0;
         
@@ -226,6 +227,15 @@ function Soul(x, y) {
             angle += Math.cos(anim * 5) * 1.0 * dT;
         }
 
+        // Emote and hunger
+        if (desiredEmote !== null) {
+            hungerAnim += dT * hunger * 10;
+            hunger += dT * 0.05;
+            if (hunger > 2) {
+                hunger = 2;
+            }
+        }
+
         self.order = 50 + y / 100;
     }
 
@@ -249,11 +259,24 @@ function Soul(x, y) {
     function getX() { return x; }
     function getY() { return y; }
 
+    function onAssignEmote({ soul, emote }) {
+        if (self !== soul) {
+            return;
+        }
+        desiredEmote = emote;
+    }
+
+    bus.on('assign-emote', onAssignEmote);
+    function onRemove() {
+        bus.off('assign-emote', onAssignEmote);
+    }
+
     self = {
         update,
         render,
         getX,
         getY,
+        onRemove,
         tags: ['soul', 'hitbox'],
         order: 40,
     };
