@@ -34,15 +34,27 @@ function Soda(cx, cy) {
             ctx.translate(0, 3 - jump * 110);
             const panim = anim - 3.0;
 
-            // Zaps
-
             // Bubbles
+            if (panim >= 0) {
+                for (let i = 0; i < 10; i++) {
+                    retainTransform(() => {
+                        const dh = -((panim + Math.cos(panim * 4 + i*0.4) * 0.04 + i * 0.73+10) % 0.5) * 8;
+                        const dx = Math.sin(i * 2 + i * i * 7) * 1.0 + 0.7;
+                        ctx.lineWidth = Math.max(0.5 / (1-dh/8) * Math.min(Math.max(3-panim, 0), 1), 0.001);
+                        ctx.strokeStyle = TEAL;
+                        ctx.beginPath();
+                        ctx.moveTo(-W*0.4+dx, -H+dh);
+                        ctx.lineTo(-W*0.4+dx, -H+dh+0.01)
+                        ctx.stroke();
+                    });
+                }
+            }
 
             // Fumes
             if (panim >= 0) {
                 for (let i = 0; i < 3; i++) {
                     retainTransform(() => {
-                        const dh = -panim * 15 + i * 2+1;
+                        const dh = -panim * 18 + i * 2+1;
                         const dx = Math.sin(i * 2) * panim * 1.5+0.5;
                         ctx.lineWidth = 0.4;
                         ctx.strokeStyle = WHITE;
@@ -122,7 +134,20 @@ function Soda(cx, cy) {
             const xOffset2 = -textWidth2 / 2;
             ctx.fillText(label, xOffset2, -H * 0.27);
 
-            
+            // Zaps
+            if (joltTime < 0.2) {
+                const jt = joltTime / 0.2;
+                const ar = 1 + jt * 3;
+                const br = 3 + jt;
+                ctx.lineWidth = 0.3;
+                ctx.strokeStyle = WHITE;
+                ctx.beginPath();
+                ctx.moveTo(-W*0.4 + Math.cos(joltIndex*4+1) * ar, -H + Math.sin(joltIndex*4+1) * ar);
+                ctx.lineTo(-W*0.4 + Math.cos(joltIndex*4+1) * br, -H + Math.sin(joltIndex*4+1) * br);
+                ctx.moveTo(-W*0.4 + Math.cos(joltIndex*4+1.5) * ar, -H + Math.sin(joltIndex*4+1.5) * ar);
+                ctx.lineTo(-W*0.4 + Math.cos(joltIndex*4+1.5) * br, -H + Math.sin(joltIndex*4+1.5) * br);
+                ctx.stroke();
+            }
         });
     }
 
