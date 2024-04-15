@@ -1,8 +1,12 @@
+import * as bus from './bus';
 import { retainTransform } from "./canvas";
 import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, RED, TAN, WHITE, YELLOW } from "./color";
 import { EMOTE } from "./emote-enum";
+import { add, remove } from './engine';
+import HexParticle from "./hex-particle";
 
 function Gateway(cx, cy, emote, challengeWord) {
+    let self;
     let activeTimer = 0;
     let spawningAnim = 0;
     let resolved = false;
@@ -12,6 +16,7 @@ function Gateway(cx, cy, emote, challengeWord) {
         msg.text = challengeWord.toUpperCase();
         msg.lang = 'ro';
         msg.pitch = 0.0;
+        msg.volume = 0.55;
     } catch {}
 
     function render(ctx) {
@@ -145,7 +150,17 @@ function Gateway(cx, cy, emote, challengeWord) {
     }
     function isResolved() { return resolved; }
 
-    return {
+    function onLevelClear() {
+        add(new HexParticle(cx, cy, emote));
+        remove([self]);
+    }
+
+    bus.on('level-clear', onLevelClear);
+    function onRemove() {
+        bus.off('level-clear', onLevelClear);
+    }
+
+    self = {
         update,
         render,
         inRegion,
@@ -157,9 +172,12 @@ function Gateway(cx, cy, emote, challengeWord) {
         getY,
         getEmote,
         getCurrentWord,
+        onRemove,
         tags: ['gateway'],
         order: -200,
     };
+
+    return self;
 }
 
 export default Gateway;

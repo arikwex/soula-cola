@@ -3,11 +3,17 @@ import { EMOTE } from "./emote-enum";
 import { add, getObjectsByTag } from "./engine";
 import Gateway from './gateway';
 
+const MODE = {
+    PLAYING: 0,
+    ENDED: 1,
+}
+
 function SoulManager() {
     let soulRequests = new Map();
     let tick = 0;
-    let availableEmotes = [EMOTE.TRIANGLE, EMOTE.YOTA, EMOTE.CIRCLE, EMOTE.WAVE];
+    let availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];//, EMOTE.YOTA, EMOTE.WAVE];
     let gatewayHistory = [];
+    let gameMode = MODE.PLAYING;
 
     function assignSoulEmote(soul, emote) {
         if (soul == null) {
@@ -30,6 +36,10 @@ function SoulManager() {
 
     function getNumAssignments() {
         return soulRequests.size;
+    }
+
+    function getNumSouls() {
+        return getObjectsByTag('soul').length;
     }
 
     function clearAssignement(soul) {
@@ -101,6 +111,7 @@ function SoulManager() {
                 break;
             }
         }
+        bus.emit('spawn-gateway');
         add(new Gateway(sx, sy, emote, generateChallengeWord()));
     }
 
@@ -154,8 +165,17 @@ function SoulManager() {
         }
 
         // Logic for gateway spawn
-        if (getNumGateways() < availableEmotes.length) {
-            spawnRandomGateway();
+        const numSouls = getNumSouls();
+
+        if (gameMode == MODE.PLAYING) {
+            if (numSouls > 0 && getNumGateways() < availableEmotes.length && Math.random() > 0.75) {
+                spawnRandomGateway();
+            }
+            if (numSouls == 0) {
+                gameMode = MODE.ENDED;
+                bus.emit('level-clear');
+                clearAll();
+            }
         }
     }
 

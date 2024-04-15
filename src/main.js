@@ -19,7 +19,6 @@ function initialize() {
     for (let i = 0; i < 5; i++) {
         add(new Soul(-50 - 15 * i, Math.cos(i * 2) * 20));
     }
-
     Audio().init();
 }
 initialize();

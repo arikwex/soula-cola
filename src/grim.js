@@ -1,3 +1,4 @@
+import * as bus from './bus';
 import { retainTransform } from "./canvas";
 import { BLACK, BROWN, DARK_ORANGE, DARK_RED, GRAY, LIGHT_GRAY, LIGHT_PURPLE, ORANGE, TAN, WHITE } from "./color";
 import { getObjectsByTag } from "./engine";
@@ -123,6 +124,7 @@ function Grim(x, y) {
         });
     }
 
+    let motionState = null;
     function update(dT) {
         let tx = 0;
         let ty = 0;
@@ -138,10 +140,18 @@ function Grim(x, y) {
             vx += (tx - vx) * 10.0 * dT;
             vy += (ty - vy) * 10.0 * dT;
             anim += dT * 1.0;
+            if (motionState != 'moving') {
+                bus.emit('player-moving');
+                motionState = 'moving';
+            }
         } else {
             vx += -vx * 5.0 * dT;
             vy += -vy * 5.0 * dT;
             anim += dT * 0.3;
+            if (motionState != 'stopped') {
+                bus.emit('player-stopped');
+                motionState = 'stopped';
+            }
         }
         
         x += vx * dT;
