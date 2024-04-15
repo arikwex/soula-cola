@@ -4,6 +4,7 @@ HITLIST
     - soul request
     - soul angry
     - soul explode
+- Camera semi-zoom
 - Drink Soula Cola to summon a bunch of souls
 - THE Soda Animation
 - Soul manager behavior / level progress / layout to match soda type / word difficulty

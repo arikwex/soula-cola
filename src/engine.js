@@ -21,21 +21,19 @@ function tick(currentFrameMs) {
         canvas.height / 800,
     );
     ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
+
+    const grim = getObjectsByTag('grim')[0];
+    if (grim) {
+        ctx.translate(-grim.getX() * 0.4, -grim.getY() * 0.4);
+        ctx.scale(1.3, 1.3);
+    }
+
     resort();
     retainTransform(() => {
-        const camera = getObjectsByTag(TAG_CAMERA)[0];
-        if (camera) {
-            camera.set(ctx);
-        }
-
         objectsToRemove.length = 0;
         gameObjects.map((g) => { if (g.update?.(dT)) { objectsToRemove.push(g); } });
         if (objectsToRemove.length) { remove(objectsToRemove); }
-        if (camera) {
-            gameObjects.map((g) => { if (g.inView(camera.x, camera.y)) { g.render?.(ctx); }});
-        } else {
-            gameObjects.map((g) => { g.render?.(ctx); });
-        }
+        gameObjects.map((g) => { g.render?.(ctx); });
         lastFrameMs = currentFrameMs;
     });
     requestAnimationFrame(tick);

@@ -5,10 +5,8 @@ import badTapData from "../audio/bad-tap.wav";
 import skylightData from "../audio/skylight.wav";
 import transcendData from "../audio/transcend.wav";
 import walkingData from "../audio/walking.wav";
-
-function clamp(v, a, b) {
-    return Math.min(Math.max(v, a), b);
-}
+import meepData from "../audio/meep.wav";
+import popData from "../audio/pop.wav";
 
 function AudioEngine() {   
     const sodaAudio = new Audio(sodaData);
@@ -17,6 +15,8 @@ function AudioEngine() {
     const skylightAudio = new Audio(skylightData);
     const transcendAudio = new Audio(transcendData);
     const walkingAudio = new Audio(walkingData);
+    const meepAudio = new Audio(meepData);
+    const popAudio = new Audio(popData);
 
     // Audio balance
     sodaAudio.volume = 0.8;
@@ -25,8 +25,11 @@ function AudioEngine() {
     skylightAudio.volume = 0.1;
     transcendAudio.volume = 0.1;
     walkingAudio.volume = 1.0;
+    meepAudio.volume = 0.7;
+    popAudio.volume = 1.0;
 
     walkingAudio.loop = true;
+    meepAudio.preservesPitch = false;
 
     function init() {
         bus.on('soda-pop', () => { sodaAudio.currentTime = 0; sodaAudio.play(); });
@@ -37,6 +40,8 @@ function AudioEngine() {
         bus.on('spawn-gateway', () => { skylightAudio.currentTime = 0; skylightAudio.play(); });
         bus.on('player-moving', () => { walkingAudio.play(); });
         bus.on('player-stopped', () => { walkingAudio.pause(); });
+        bus.on('exploded', () => { popAudio.currentTime = 0; popAudio.play(); });
+        bus.on('assign-emote', () => { meepAudio.currentTime = 0; meepAudio.playbackRate=Math.random()*0.4+1.0; meepAudio.play(); });
     }
 
     return {
