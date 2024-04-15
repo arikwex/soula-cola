@@ -23,11 +23,13 @@ function AudioEngine() {
     lightTapAudio.volume = 0.3;
     badTapAudio.volume = 0.4;
     skylightAudio.volume = 0.1;
-    transcendAudio.volume = 0.1;
+    transcendAudio.volume = 0.17;
     walkingAudio.volume = 1.0;
     meepAudio.volume = 0.7;
     popAudio.volume = 1.0;
 
+    window.sodaAudio = sodaAudio;
+    sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
 
@@ -47,6 +49,7 @@ function AudioEngine() {
     }
 
     function init() {
+        setTimeout(() => { bus.emit('soda-pop'); }, 1000);
         bus.on('soda-pop', () => { sodaAudio.currentTime = 0; sodaAudio.play(); });
         bus.on('utterance', (txt) => { utter(txt); });
         bus.on('interact-fill', () => { lightTapAudio.currentTime = 0; lightTapAudio.play(); });

@@ -53,11 +53,6 @@
       canvas.height / 800
     );
     ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
-    const grim = getObjectsByTag("grim")[0];
-    if (grim) {
-      ctx.translate(-grim.getX() * 0.4, -grim.getY() * 0.4);
-      ctx.scale(1.3, 1.3);
-    }
     resort();
     retainTransform(() => {
       objectsToRemove.length = 0;
@@ -147,10 +142,12 @@
     lightTapAudio.volume = 0.3;
     badTapAudio.volume = 0.4;
     skylightAudio.volume = 0.1;
-    transcendAudio.volume = 0.1;
+    transcendAudio.volume = 0.17;
     walkingAudio.volume = 1;
     meepAudio.volume = 0.7;
     popAudio.volume = 1;
+    window.sodaAudio = sodaAudio;
+    sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
     function utter(txt) {
@@ -170,6 +167,9 @@
       }
     }
     function init() {
+      setTimeout(() => {
+        emit("soda-pop");
+      }, 1e3);
       on("soda-pop", () => {
         sodaAudio.currentTime = 0;
         sodaAudio.play();
@@ -229,6 +229,7 @@
   var ORANGE = "#FFC90E";
   var GREEN = "#22B14C";
   var BLUE = "#00A2E8";
+  var TEAL = "#99D9EA";
   var DARK_BLUE = "#3F48CC";
   var PURPLE = "#A349A4";
 
@@ -1090,68 +1091,105 @@
   var hud_default = HUD;
 
   // src/soda.js
-  function Soda(cx, cy, challengeWord) {
+  function Soda(cx, cy) {
     let self;
-    let activeTimer = 0;
-    let spawningAnim = 0;
-    let resolved = false;
+    let anim = 0;
+    let joltTime = 10;
+    let joltHeight = 0;
+    let joltAngle = 0;
+    const joltTiming = [0.1, 0.73, 1.15, 1.53, 1.9, 2.1, 2.3, 2.45, 2.55, 2.7, 2.8, 2.9, 3, 3.1, 1e3];
+    const joltRate = [8, 8, 8, 8, 10, 12, 14, 16, 16, 16, 16, 16, 16, 16, 17];
+    let joltIndex = 0;
     function render(ctx2) {
       retainTransform(() => {
-        if (spawningAnim > 0.5) {
-          ctx2.lineWidth = 5;
-          if (activeTimer > 0) {
-            ctx2.strokeStyle = WHITE;
-          } else {
-            ctx2.strokeStyle = LIGHT_GRAY;
-          }
-          ctx2.beginPath();
-          for (let i = 0; i < 6; i++) {
-            const dx = Math.cos(i / 6 * 6.28) * 70;
-            const dy = Math.sin(i / 6 * 6.28) * 70 / 2;
-            if (i == 0)
-              ctx2.moveTo(cx + dx, cy + dy);
-            else
-              ctx2.lineTo(cx + dx, cy + dy);
-          }
-          ctx2.closePath();
-          ctx2.stroke();
+        ctx2.translate(cx, cy);
+        const W = 6;
+        const H = 10;
+        const pivotAngle = joltAngle * Math.sin(joltTime * 20) * Math.exp(-joltTime * joltRate[joltIndex]);
+        const q = joltTime * joltRate[joltIndex] / 6;
+        const jump = Math.max(joltHeight * (q * 4 - q * q * 14) / 4, 0) / (0.2 + joltRate[joltIndex] / 20);
+        ctx2.fillStyle = "rgba(0,0,0,0.12)";
+        ctx2.beginPath();
+        ctx2.ellipse(0, 0, W * 0.7 * (1 - 5 * jump), W * 0.3 * (1 - 4 * jump), 0, 0, 6.28);
+        ctx2.fill();
+        ctx2.translate(0, -3);
+        ctx2.rotate(pivotAngle);
+        ctx2.translate(0, 3 - jump * 110);
+        ctx2.lineWidth = 1;
+        ctx2.strokeStyle = LIGHT_GRAY;
+        ctx2.beginPath();
+        if (anim > 3.05) {
+          ctx2.moveTo(-W * 0.3, -H - 0.3);
+          ctx2.lineTo(-W * 0.06, -H - 1.2);
+        } else {
+          ctx2.moveTo(-W * 0.3, -H - 0.4);
+          ctx2.lineTo(0, -H - 0.4);
         }
-        if (spawningAnim < 1) {
-          const S = 1.1 - 1.1 * Math.exp(-spawningAnim * 4);
-          const H = 1 * Math.exp(-spawningAnim * 5) + 0.02;
-          const alpha = Math.min(spawningAnim * 2, 1) * Math.min(Math.max(5 - spawningAnim * 5, 0), 1);
-          ctx2.fillStyle = `rgba(255,255,255,${alpha})`;
-          for (let i = 0; i < 6; i++) {
-            ctx2.beginPath();
-            const dx = Math.cos(i / 6 * 6.28) * 70 * S;
-            const dy = Math.sin(i / 6 * 6.28) * 70 / 2 * S;
-            const dx2 = Math.cos((i + 1) / 6 * 6.28) * 70 * S;
-            const dy2 = Math.sin((i + 1) / 6 * 6.28) * 70 / 2 * S;
-            ctx2.moveTo(cx + dx, cy + dy);
-            ctx2.lineTo(cx + dx2, cy + dy2);
-            ctx2.lineTo(cx + dx2, cy + dy2 - 400 * H);
-            ctx2.lineTo(cx + dx, cy + dy - 400 * H);
-            ctx2.fill();
-          }
-        }
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.lineWidth = 1;
+        ctx2.strokeStyle = DARK_BLUE;
+        ctx2.fillStyle = DARK_BLUE;
+        ctx2.beginPath();
+        ctx2.moveTo(-W / 2, 0);
+        ctx2.lineTo(-W / 2, -H);
+        ctx2.lineTo(W / 2, -H);
+        ctx2.lineTo(W / 2, 0);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.lineWidth = 0.2;
+        ctx2.strokeStyle = TEAL;
+        ctx2.fillStyle = TEAL;
+        ctx2.beginPath();
+        ctx2.moveTo(-W / 2 - 0.4, -H * 0.2);
+        ctx2.lineTo(-W / 2 - 0.4, -H * 0.7);
+        ctx2.lineTo(W / 2 + 0.4, -H * 0.7);
+        ctx2.lineTo(W / 2 + 0.4, -H * 0.2);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.font = "0.8px monospace";
+        ctx2.fillStyle = WHITE;
+        const textWidth = ctx2.measureText("SOULA COLA").width;
+        const xOffset = -textWidth / 2;
+        ctx2.fillText("SOULA COLA", xOffset, -H * 0.85);
+        ctx2.lineWidth = 0.2;
+        ctx2.strokeStyle = BLUE;
+        ctx2.fillStyle = BLUE;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -H * 0.6);
+        ctx2.lineTo(-H * 0.1, -H * 0.5);
+        ctx2.lineTo(0, -H * 0.4);
+        ctx2.lineTo(H * 0.1, -H * 0.5);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.font = "0.5px monospace";
+        ctx2.fillStyle = BLACK;
+        const label = "Sour Coffee Bile";
+        const textWidth2 = ctx2.measureText(label).width;
+        const xOffset2 = -textWidth2 / 2;
+        ctx2.fillText(label, xOffset2, -H * 0.27);
       });
     }
     function update(dT) {
-      activeTimer -= dT;
-      spawningAnim += dT;
-    }
-    function inRegion(tx, ty) {
-      const dx = tx - cx;
-      const dy = ty - cy;
-      return spawningAnim > 1 && dx * dx + dy * dy * 2 < 65 * 65;
-    }
-    function isTooCloseToGate(tx, ty) {
-      const dx = tx - cx;
-      const dy = ty - cy;
-      return dx * dx + dy * dy * 2 < 130 * 130;
-    }
-    function refreshActive() {
-      activeTimer = 0.2;
+      anim = window.sodaAudio.currentTime;
+      joltTime += dT;
+      if (joltIndex == joltTiming.length - 1 && anim < 0.5) {
+        joltIndex = 0;
+      }
+      const targetAnimTime = joltTiming[joltIndex];
+      if (anim >= targetAnimTime) {
+        joltHeight = Math.random() * 0.1 + 0.1;
+        joltAngle = 0.25;
+        if (joltIndex % 2 == 0) {
+          joltAngle *= -1;
+        }
+        joltTime = 0;
+        joltIndex += 1;
+      }
+      self.order = 50 + cy / 100;
     }
     function getX() {
       return cx;
@@ -1159,45 +1197,58 @@
     function getY() {
       return cy;
     }
-    function getCurrentWord() {
-      return challengeWord;
-    }
-    function resolve() {
-      resolved = true;
-    }
-    function isResolved() {
-      return resolved;
-    }
-    function getEmote() {
-      return EMOTE.SOULA_COLA;
-    }
     self = {
       update,
       render,
-      inRegion,
-      isTooCloseToGate,
-      refreshActive,
       getX,
       getY,
-      resolve,
-      isResolved,
-      getEmote,
-      getCurrentWord,
-      tags: ["gateway", "soda"],
-      order: -200
+      tags: ["soda"],
+      order: -199
     };
     return self;
   }
   var soda_default2 = Soda;
 
+  // src/camera.js
+  function Camera() {
+    let self;
+    function render(ctx2) {
+      const soda = getObjectsByTag("soda")[0];
+      if (soda) {
+        ctx2.translate(-soda.getX(), -soda.getY());
+        let s = 0;
+        let t = window.sodaAudio.currentTime;
+        if (t < 3.1) {
+          s = t * 4;
+        } else {
+          s = 3.1 * 4 - (1 - Math.exp(-(t - 3.1) * 4)) * 25;
+        }
+        ctx2.scale(45 + s, 45 + s);
+        ctx2.translate(0, 5);
+      }
+    }
+    function update(dT) {
+    }
+    self = {
+      update,
+      render,
+      tags: ["camera"],
+      order: -9999
+    };
+    return self;
+  }
+  var camera_default = Camera;
+
   // src/main.js
   function initialize() {
+    add(new camera_default());
     add(new hud_default());
     add(new arena_default());
     add(new soul_manager_default());
     add(new interaction_default());
     add(new grim_default(-40, 0));
-    add(new soda_default2(0, 0, "SOLUKI"));
+    add(new gateway_default(0, 0, EMOTE.SOULA_COLA, "SOLUKI"));
+    add(new soda_default2(0, 0));
     audio_default().init();
   }
   initialize();

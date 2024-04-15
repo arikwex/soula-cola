@@ -3,6 +3,7 @@ HITLIST
 - Drink Soula Cola to summon a bunch of souls
 - THE Soda Animation
 - Audio + Music
+    - soul spawn sound
     - soul angry
     - soul stepping on to active region
     - Ambient pad synth drag set beat => inspired by babayaga groove and howling riff

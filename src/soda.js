@@ -1,105 +1,139 @@
 import * as bus from './bus';
 import { retainTransform } from "./canvas";
-import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, RED, TAN, WHITE, YELLOW } from "./color";
-import { EMOTE } from "./emote-enum";
-import { add, remove } from './engine';
-import HexParticle from "./hex-particle";
+import { BLACK, BLUE, DARK_BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, RED, TAN, TEAL, WHITE, YELLOW } from "./color";
 
-function Soda(cx, cy, challengeWord) {
+function Soda(cx, cy) {
     let self;
-    let activeTimer = 0;
-    let spawningAnim = 0;
-    let resolved = false;
+    let anim = 0;
+    let joltTime = 10;
+    let joltHeight = 0;
+    let joltAngle = 0;
+    const joltTiming = [0.1, 0.73, 1.15, 1.53, 1.9, 2.1, 2.3, 2.45, 2.55, 2.7, 2.8, 2.9, 3.0, 3.1, 1000];
+    const joltRate =   [8,   8,    8,    8,    10,  12,  14,  16,   16,   16,  16,  16,  16,  16,  17];
+    let joltIndex = 0;
 
     function render(ctx) {
         retainTransform(() => {
-            if (spawningAnim > 0.5) {
-                // Gateway vis
-                ctx.lineWidth = 5;
-                
-                // can here
-                if (activeTimer > 0) {
-                    ctx.strokeStyle = WHITE;
-                } else {
-                    ctx.strokeStyle = LIGHT_GRAY;
-                }
-                ctx.beginPath();
-                for (let i = 0; i < 6; i++) {
-                    const dx = Math.cos(i/6*6.28) * 70;
-                    const dy = Math.sin(i/6*6.28) * 70/2;
-                    if (i == 0) ctx.moveTo(cx+dx, cy+dy);
-                    else ctx.lineTo(cx+dx, cy+dy);
-                }
-                ctx.closePath();
-                // ctx.moveTo(cx+55, cy);
-                // ctx.ellipse(cx, cy, 55, 55/2, 0, 0, 6.28);
-                ctx.stroke();
-            }
+            ctx.translate(cx, cy);
 
-            // Spawning-in animation
-            if (spawningAnim < 1.0) {
-                const S = 1.1 - 1.1 * Math.exp(-spawningAnim * 4);
-                const H = 1 * Math.exp(-spawningAnim * 5) + 0.02;
-                const alpha = Math.min(spawningAnim * 2, 1) * Math.min(Math.max(5 - spawningAnim * 5, 0), 1);
-                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-                for (let i = 0; i < 6; i++) {
-                    ctx.beginPath();
-                    const dx = Math.cos(i/6*6.28) * 70 * S;
-                    const dy = Math.sin(i/6*6.28) * 70/2 * S;
-                    const dx2 = Math.cos((i+1)/6*6.28) * 70 * S;
-                    const dy2 = Math.sin((i+1)/6*6.28) * 70/2 * S;
-                    ctx.moveTo(cx+dx, cy+dy);
-                    ctx.lineTo(cx+dx2, cy+dy2);
-                    ctx.lineTo(cx+dx2, cy+dy2-400 * H);
-                    ctx.lineTo(cx+dx, cy+dy-400 * H);
-                    ctx.fill();
-                }
+            const W = 6;
+            const H = 10;
+            const pivotAngle = joltAngle * Math.sin(joltTime * 20) * Math.exp(-joltTime * joltRate[joltIndex]);
+            const q = joltTime * joltRate[joltIndex] / 6.0;
+            const jump = Math.max(joltHeight * (q * 4 - q * q * 14) / 4.0, 0) / (0.2 + joltRate[joltIndex]/20.0);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, W * 0.7 * (1.0 - 5 * jump), W * 0.3 * (1 - 4 * jump), 0, 0, 6.28);
+            ctx.fill();
+
+            // Rotation
+            ctx.translate(0, -3);
+            ctx.rotate(pivotAngle);
+            ctx.translate(0, 3 - jump * 110);
+
+            // Can Tab
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = LIGHT_GRAY;
+            ctx.beginPath();
+            if (anim > 3.05) {
+                ctx.moveTo(-W*0.3, -H-0.3);
+                ctx.lineTo(-W*0.06, -H-1.2);
+            } else {
+                ctx.moveTo(-W*0.3, -H-0.4);
+                ctx.lineTo(0, -H-0.4);
             }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Core Can
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = DARK_BLUE; // TBD: Color by word
+            ctx.fillStyle = DARK_BLUE;
+            ctx.beginPath();
+            ctx.moveTo(-W/2, 0);
+            ctx.lineTo(-W/2, -H);
+            ctx.lineTo(W/2, -H);
+            ctx.lineTo(W/2, 0);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+
+            // Banner
+            ctx.lineWidth = 0.2;
+            ctx.strokeStyle = TEAL; // TBD: Color by word
+            ctx.fillStyle = TEAL;
+            ctx.beginPath();
+            ctx.moveTo(-W/2-0.4, -H*0.2);
+            ctx.lineTo(-W/2-0.4, -H*0.7);
+            ctx.lineTo(W/2+0.4, -H*0.7);
+            ctx.lineTo(W/2+0.4, -H*0.2);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+
+            // Soula Cola
+            ctx.font = "0.8px monospace";
+            ctx.fillStyle = WHITE;
+            const textWidth = ctx.measureText('SOULA COLA').width;
+            const xOffset = -textWidth / 2;
+            ctx.fillText('SOULA COLA', xOffset, -H * 0.85);
+
+            // Icon (TBD: icon by word)
+            ctx.lineWidth = 0.2;
+            ctx.strokeStyle = BLUE;
+            ctx.fillStyle = BLUE;
+            ctx.beginPath();
+            ctx.moveTo(0, -H*0.6);
+            ctx.lineTo(-H*0.1, -H*0.5);
+            ctx.lineTo(0, -H*0.4);
+            ctx.lineTo(H*0.1, -H*0.5);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+
+            // Label
+            ctx.font = "0.5px monospace";
+            ctx.fillStyle = BLACK;
+            const label = "Sour Coffee Bile";
+            const textWidth2 = ctx.measureText(label).width;
+            const xOffset2 = -textWidth2 / 2;
+            ctx.fillText(label, xOffset2, -H * 0.27);
         });
     }
 
     function update(dT) {
-        activeTimer -= dT;
-        spawningAnim += dT;
-    }
+        anim = window.sodaAudio.currentTime;
+        joltTime += dT;
 
-    function inRegion(tx, ty) {
-        const dx = tx - cx;
-        const dy = ty - cy;
-        return (spawningAnim > 1.0) && (dx * dx + (dy * dy) * 2 < 65 * 65);
-    }
+        if (joltIndex == joltTiming.length - 1 && anim < 0.5) {
+            joltIndex = 0;
+        } 
+        const targetAnimTime = joltTiming[joltIndex];
+        if (anim >= targetAnimTime) {
+            joltHeight = Math.random() * 0.1 + 0.1;
+            joltAngle = 0.25;
+            if (joltIndex % 2 == 0) {
+                joltAngle *= -1;
+            }
+            joltTime = 0;
+            joltIndex += 1;
+        }
 
-    function isTooCloseToGate(tx, ty) {
-        const dx = tx - cx;
-        const dy = ty - cy;
-        return dx * dx + (dy * dy) * 2 < 130 * 130;
-    }
-
-    function refreshActive() {
-        activeTimer = 0.2;
+        self.order = 50 + cy / 100;
     }
 
     function getX() { return cx; }
     function getY() { return cy; }
-    function getCurrentWord() { return challengeWord; }
-    function resolve() { resolved = true; }
-    function isResolved() { return resolved; }
-    function getEmote() { return EMOTE.SOULA_COLA; }
 
     self = {
         update,
         render,
-        inRegion,
-        isTooCloseToGate,
-        refreshActive,
         getX,
         getY,
-        resolve,
-        isResolved,
-        getEmote,
-        getCurrentWord,
-        tags: ['gateway', 'soda'],
-        order: -200,
+        tags: ['soda'],
+        order: -199,
     };
 
     return self;

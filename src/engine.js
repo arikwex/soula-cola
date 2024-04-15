@@ -22,12 +22,6 @@ function tick(currentFrameMs) {
     );
     ctx.setTransform(zoom, 0, 0, zoom, canvas.width * 0.5, canvas.height * 0.54);
 
-    const grim = getObjectsByTag('grim')[0];
-    if (grim) {
-        ctx.translate(-grim.getX() * 0.4, -grim.getY() * 0.4);
-        ctx.scale(1.3, 1.3);
-    }
-
     resort();
     retainTransform(() => {
         objectsToRemove.length = 0;

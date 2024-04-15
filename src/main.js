@@ -10,14 +10,17 @@ import { EMOTE } from './emote-enum';
 import Interaction from './interaction';
 import HUD from './hud';
 import Soda from './soda';
+import Camera from './camera';
 
 function initialize() {
+    add(new Camera());
     add(new HUD());
     add(new Arena());
     add(new SoulManager());
     add(new Interaction());
     add(new Grim(-40, 0));
-    add(new Soda(0, 0, 'SOLUKI'));
+    add(new Gateway(0, 0, EMOTE.SOULA_COLA, 'SOLUKI'));
+    add(new Soda(0, 0));
     // for (let i = 0; i < 5; i++) {
     //     add(new Soul(-50 - 15 * i, Math.cos(i * 2) * 20));
     // }
