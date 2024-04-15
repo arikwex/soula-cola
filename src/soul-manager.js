@@ -6,6 +6,7 @@ import Gateway from './gateway';
 const MODE = {
     PLAYING: 0,
     ENDED: 1,
+    NEED_COLA: 2,
 }
 
 function SoulManager() {
@@ -13,7 +14,7 @@ function SoulManager() {
     let tick = 0;
     let availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];//, EMOTE.YOTA, EMOTE.WAVE];
     let gatewayHistory = [];
-    let gameMode = MODE.PLAYING;
+    let gameMode = MODE.NEED_COLA;
 
     function assignSoulEmote(soul, emote) {
         if (soul == null) {

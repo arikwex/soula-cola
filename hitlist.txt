@@ -1,12 +1,11 @@
 HITLIST
 =======
-- Audio + Music
-    - soul request
-    - soul angry
-    - soul explode
-- Camera semi-zoom
 - Drink Soula Cola to summon a bunch of souls
 - THE Soda Animation
+- Audio + Music
+    - soul angry
+    - soul stepping on to active region
+    - Ambient pad synth drag set beat => inspired by babayaga groove and howling riff
 - Soul manager behavior / level progress / layout to match soda type / word difficulty
 - Visual for mis-type
 - "meep meep meep" in desperation for their desires

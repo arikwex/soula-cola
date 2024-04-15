@@ -39,6 +39,10 @@ function tick(currentFrameMs) {
     requestAnimationFrame(tick);
 }
 
+function ultrazoomSoda() {
+    
+}
+
 function add(obj) {
     if (!obj.inView) { obj.inView=()=>1 }
     gameObjects.push(obj);

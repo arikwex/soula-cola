@@ -31,8 +31,24 @@ function AudioEngine() {
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
 
+    function utter(txt) {
+        let msg = null;
+        try {
+            msg = new SpeechSynthesisUtterance();
+            msg.text = txt.toUpperCase();
+            msg.lang = 'ro';
+            msg.pitch = 0.0;
+            msg.volume = 0.55;
+        } catch {}
+        try { 
+            msg.lang = 'ro';
+            window.speechSynthesis.speak(msg);
+        } catch{}
+    }
+
     function init() {
         bus.on('soda-pop', () => { sodaAudio.currentTime = 0; sodaAudio.play(); });
+        bus.on('utterance', (txt) => { utter(txt); });
         bus.on('interact-fill', () => { lightTapAudio.currentTime = 0; lightTapAudio.play(); });
         bus.on('interact-error', () => { badTapAudio.currentTime = 0; badTapAudio.play(); });
         bus.on('consume', () => { transcendAudio.currentTime = 0; transcendAudio.play(); });

@@ -153,10 +153,29 @@
     popAudio.volume = 1;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
+    function utter(txt) {
+      let msg = null;
+      try {
+        msg = new SpeechSynthesisUtterance();
+        msg.text = txt.toUpperCase();
+        msg.lang = "ro";
+        msg.pitch = 0;
+        msg.volume = 0.55;
+      } catch {
+      }
+      try {
+        msg.lang = "ro";
+        window.speechSynthesis.speak(msg);
+      } catch {
+      }
+    }
     function init() {
       on("soda-pop", () => {
         sodaAudio.currentTime = 0;
         sodaAudio.play();
+      });
+      on("utterance", (txt) => {
+        utter(txt);
       });
       on("interact-fill", () => {
         lightTapAudio.currentTime = 0;
@@ -444,344 +463,12 @@
 
   // src/emote-enum.js
   var EMOTE = {
+    SOULA_COLA: -1,
     TRIANGLE: 0,
     YOTA: 1,
     CIRCLE: 2,
     WAVE: 3
   };
-
-  // src/poof-particle.js
-  function PoofParticle(cx, cy, ang) {
-    let anim = 0;
-    let r1 = Math.random() * 0.6 + 0.9;
-    if (!ang) {
-      ang = Math.random() * 3 - 1.5;
-    }
-    function render(ctx2) {
-      retainTransform(() => {
-        const LW = Math.exp(-anim * 5) * 20 * Math.max(1 - anim / 2, 0);
-        ctx2.lineWidth = LW;
-        let R1 = 60 * r1 * (1 - Math.exp(-anim * 5)) + anim * 10;
-        ctx2.strokeStyle = RED;
-        ctx2.beginPath();
-        ctx2.ellipse(cx, cy + LW * 0.5, R1, R1 / 2, ang * 0.8, 0, 6.28);
-        ctx2.stroke();
-        ctx2.strokeStyle = WHITE;
-        ctx2.beginPath();
-        ctx2.ellipse(cx, cy, R1, R1 / 2, ang, 0, 6.28);
-        ctx2.stroke();
-      });
-    }
-    function update(dT) {
-      anim += dT;
-      if (anim > 2) {
-        return true;
-      }
-    }
-    return {
-      update,
-      render,
-      order: 100
-    };
-  }
-  var poof_particle_default = PoofParticle;
-
-  // src/soul.js
-  function Soul(x, y) {
-    let self = null;
-    let vx = 0;
-    let vy = 0;
-    let SPEED = 90 + Math.random() * 40;
-    let HEIGHT = 0.9 + Math.random() * 1;
-    let WIDTH = 0.9 + Math.random() * 0.4;
-    let FACE_HEIGHT = Math.random() * 8;
-    let FACE_WIDTH = Math.random() * 2.3 + 1.7;
-    let FACE_PLACE = -1 + Math.random() * 8;
-    let angle = Math.random() * 7;
-    let anim = Math.random() * 100;
-    let desiredEmote = null;
-    let hunger = 0;
-    let hungerAnim = Math.random() * 100;
-    let activeGateway = null;
-    function getFadeFactor() {
-      return 1 - Math.max(hunger - 1, 0);
-    }
-    function getFaceColor() {
-      let q = getFadeFactor();
-      let R = 0;
-      let G = 162;
-      let B = 232;
-      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
-        R = 255;
-        G = 255;
-        B = 230;
-      }
-      let A = 1;
-      R = R * q + 250 * (1 - q);
-      G = G * q + 130 * (1 - q);
-      B = B * q + 130 * (1 - q);
-      A = A * q + 0.6 * (1 - q);
-      return `rgba(${R},${G},${B},${A})`;
-    }
-    function getTorsoColor() {
-      let q = getFadeFactor();
-      let R = 63;
-      let G = 72;
-      let B = 204;
-      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
-        R = 255;
-        G = 230;
-        B = 170;
-      }
-      let A = 1;
-      R = R * q + 250 * (1 - q);
-      G = G * q + 40 * (1 - q);
-      B = B * q + 40 * (1 - q);
-      A = A * q + 0.6 * (1 - q);
-      return `rgba(${R},${G},${B},${A})`;
-    }
-    function renderFace(ctx2, C, S, H) {
-      ctx2.strokeStyle = getFaceColor();
-      S -= 0.2;
-      if (S < 0) {
-        const wd = Math.max(Math.min(-16 * S, 14), 0);
-        const s = (14 - wd) * 0.5;
-        ctx2.lineWidth = wd * WIDTH;
-        ctx2.beginPath();
-        ctx2.moveTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT - s * 0.7 - 6);
-        ctx2.lineTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT + s * 0.7 - 2 + FACE_HEIGHT);
-        ctx2.stroke();
-        if (activeGateway != null) {
-          ctx2.strokeStyle = BLACK;
-        } else {
-          ctx2.strokeStyle = WHITE;
-        }
-        ctx2.lineWidth = 3 * wd / 14;
-        ctx2.beginPath();
-        ctx2.moveTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
-        ctx2.lineTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
-        ctx2.moveTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
-        ctx2.lineTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
-        ctx2.stroke();
-      }
-    }
-    function renderBody(ctx2, C, S, H) {
-      const col = getTorsoColor();
-      ctx2.fillStyle = col;
-      ctx2.strokeStyle = col;
-      const Q = H * 3;
-      ctx2.lineWidth = 16 * WIDTH + Q;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -5 - Q * WIDTH * 0.5 - WIDTH * 2);
-      ctx2.lineTo(0, (-20 + H * 2) * HEIGHT);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.stroke();
-      ctx2.lineWidth = 18 * WIDTH;
-      ctx2.beginPath();
-      ctx2.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
-      ctx2.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
-      ctx2.stroke();
-      ctx2.strokeStyle = col;
-      ctx2.lineWidth = 5 * WIDTH;
-      ctx2.beginPath();
-      ctx2.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
-      ctx2.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
-      ctx2.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
-      ctx2.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
-      ctx2.stroke();
-    }
-    function renderEmote(ctx2) {
-      if (desiredEmote != null) {
-        if (desiredEmote == EMOTE.TRIANGLE) {
-          renderTriangleEmote(ctx2, 0);
-        } else if (desiredEmote == EMOTE.YOTA) {
-          renderYotaEmote(ctx2, 0);
-        } else if (desiredEmote == EMOTE.CIRCLE) {
-          renderCircleEmote(ctx2, 0);
-        } else if (desiredEmote == EMOTE.WAVE) {
-          renderWaveEmote(ctx2, 0);
-        }
-      }
-    }
-    function renderTriangleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 5;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -20 * HEIGHT - 34 + dy);
-      ctx2.lineTo(7, -20 * HEIGHT - 24 + dy);
-      ctx2.lineTo(-7, -20 * HEIGHT - 24 + dy);
-      ctx2.closePath();
-      ctx2.stroke();
-      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
-      ctx2.stroke();
-    }
-    function renderYotaEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 5;
-      ctx2.beginPath();
-      ctx2.moveTo(0, -20 * HEIGHT - 24);
-      ctx2.lineTo(0, -20 * HEIGHT - 28);
-      ctx2.moveTo(-5, -20 * HEIGHT - 34);
-      ctx2.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
-      ctx2.stroke();
-      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
-      ctx2.stroke();
-    }
-    function renderCircleEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 5;
-      ctx2.beginPath();
-      ctx2.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
-      ctx2.lineTo(0, -20 * HEIGHT - 24 + dy);
-      ctx2.stroke();
-      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
-      ctx2.stroke();
-    }
-    function renderWaveEmote(ctx2, dy) {
-      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 5;
-      ctx2.beginPath();
-      ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
-      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 - 3 + dy, 4, -20 * HEIGHT - 21 - 3 + dy, 7, -20 * HEIGHT - 29 - 3 + dy);
-      ctx2.moveTo(-7, -20 * HEIGHT - 29 + 3 + dy);
-      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 + 3 + dy, 4, -20 * HEIGHT - 21 + 3 + dy, 7, -20 * HEIGHT - 29 + 3 + dy);
-      ctx2.stroke();
-      ctx2.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
-      ctx2.lineWidth = 3;
-      ctx2.stroke();
-    }
-    function render(ctx2) {
-      retainTransform(() => {
-        ctx2.translate(x, y);
-        const C = Math.cos(angle);
-        const S = Math.sin(angle);
-        const H = Math.abs(Math.cos(anim * 12)) * 2;
-        renderBody(ctx2, C, S, H);
-        renderFace(ctx2, C, S, H);
-        renderEmote(ctx2);
-      });
-    }
-    function update(dT) {
-      let tx = 0;
-      let ty = 0;
-      const grim = getObjectsByTag("grim")[0];
-      if (grim) {
-        tx = grim.getX() - x;
-        ty = grim.getY() - y;
-      }
-      const M = Math.sqrt(tx * tx + ty * ty);
-      if (M > 40) {
-        tx *= SPEED / M;
-        ty *= SPEED / M;
-        vx += (tx - vx) * 3 * dT;
-        vy += (ty - vy) * 3 * dT;
-      } else {
-        vx += -vx * 5 * dT;
-        vy += -vy * 5 * dT;
-      }
-      let bx = x;
-      let by = y;
-      x += vx * dT;
-      y += vy * dT;
-      handleCollision();
-      let isMoving = false;
-      let bx2 = bx - x;
-      let by2 = by - y;
-      if (bx2 * bx2 + by2 * by2 < 10 * dT) {
-        anim += dT * (0.3 + WIDTH * 0.05);
-      } else {
-        anim += dT * (1 - HEIGHT * 0.07);
-        isMoving = true;
-      }
-      if (isMoving) {
-        angle = -Math.atan2(vy, vx);
-      } else {
-        angle += Math.cos(anim * 5) * 1 * dT;
-      }
-      if (desiredEmote !== null) {
-        hunger += dT * 0.05;
-        if (hunger < 1) {
-          hungerAnim = 0;
-        }
-        if (hunger > 1) {
-          hungerAnim += dT * (hunger - 1) * 45;
-        }
-        if (hunger > 2) {
-          add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
-          setTimeout(() => {
-            add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
-          }, Math.random() * 100 + 50);
-          emit("exploded");
-          return true;
-        }
-      }
-      const gateways = getObjectsByTag("gateway");
-      activeGateway = null;
-      for (let i = 0; i < gateways.length; i++) {
-        if (gateways[i].inRegion(x, y)) {
-          activeGateway = gateways[i];
-          activeGateway.refreshActive();
-          break;
-        }
-      }
-      self.order = 50 + y / 100;
-    }
-    function handleCollision() {
-      const hitboxes = getObjectsByTag("hitbox");
-      const R = 14;
-      for (let i = 0; i < hitboxes.length; i++) {
-        if (hitboxes[i] == self) {
-          continue;
-        }
-        const dx = hitboxes[i].getX() - x;
-        const dy = hitboxes[i].getY() - y;
-        const M = Math.sqrt(dx * dx + dy * dy);
-        if (M < R + R) {
-          x = hitboxes[i].getX() - dx / M * R * 2 + Math.random() - 0.5;
-          y = hitboxes[i].getY() - dy / M * R * 2 + Math.random() - 0.5;
-        }
-      }
-    }
-    function getX() {
-      return x;
-    }
-    function getY() {
-      return y;
-    }
-    function onAssignEmote({ soul, emote }) {
-      if (self !== soul) {
-        return;
-      }
-      desiredEmote = emote;
-    }
-    function onConsume({ gateway, emote }) {
-      if (activeGateway == gateway && desiredEmote == emote) {
-        remove([self]);
-        emit("consume-success");
-      }
-    }
-    on("assign-emote", onAssignEmote);
-    on("consume", onConsume);
-    function onRemove() {
-      off("assign-emote", onAssignEmote);
-      off("consume", onConsume);
-    }
-    self = {
-      update,
-      render,
-      getX,
-      getY,
-      onRemove,
-      tags: ["soul", "hitbox"],
-      order: 40
-    };
-    return self;
-  }
-  var soul_default = Soul;
 
   // src/hex-particle.js
   function HexParticle(cx, cy, emote) {
@@ -849,15 +536,6 @@
     let activeTimer = 0;
     let spawningAnim = 0;
     let resolved = false;
-    let msg = null;
-    try {
-      msg = new SpeechSynthesisUtterance();
-      msg.text = challengeWord.toUpperCase();
-      msg.lang = "ro";
-      msg.pitch = 0;
-      msg.volume = 0.55;
-    } catch {
-    }
     function render(ctx2) {
       retainTransform(() => {
         if (spawningAnim > 0.5) {
@@ -986,11 +664,6 @@
     }
     function resolve() {
       resolved = true;
-      try {
-        msg.lang = "ro";
-        window.speechSynthesis.speak(msg);
-      } catch {
-      }
     }
     function isResolved() {
       return resolved;
@@ -1026,14 +699,15 @@
   // src/soul-manager.js
   var MODE = {
     PLAYING: 0,
-    ENDED: 1
+    ENDED: 1,
+    NEED_COLA: 2
   };
   function SoulManager() {
     let soulRequests = /* @__PURE__ */ new Map();
     let tick2 = 0;
     let availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];
     let gatewayHistory = [];
-    let gameMode = MODE.PLAYING;
+    let gameMode = MODE.NEED_COLA;
     function assignSoulEmote(soul, emote) {
       if (soul == null) {
         return;
@@ -1292,12 +966,13 @@
           add(new letter_particle_default(cx, cy, nextLetterText));
           if (numFilled == text.length) {
             activeGateway.resolve();
+            emit("utterance", activeGateway.getCurrentWord().toUpperCase());
             SG = activeGateway;
             setTimeout(() => {
               emit("consume", { gateway: SG, emote: SG.getEmote() });
               add(new hex_particle_default(SG.getX(), SG.getY(), SG.getEmote()));
               remove([SG]);
-            }, 500);
+            }, 150);
             activeGateway = null;
           } else {
             updateFilledText();
@@ -1414,16 +1089,115 @@
   }
   var hud_default = HUD;
 
+  // src/soda.js
+  function Soda(cx, cy, challengeWord) {
+    let self;
+    let activeTimer = 0;
+    let spawningAnim = 0;
+    let resolved = false;
+    function render(ctx2) {
+      retainTransform(() => {
+        if (spawningAnim > 0.5) {
+          ctx2.lineWidth = 5;
+          if (activeTimer > 0) {
+            ctx2.strokeStyle = WHITE;
+          } else {
+            ctx2.strokeStyle = LIGHT_GRAY;
+          }
+          ctx2.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const dx = Math.cos(i / 6 * 6.28) * 70;
+            const dy = Math.sin(i / 6 * 6.28) * 70 / 2;
+            if (i == 0)
+              ctx2.moveTo(cx + dx, cy + dy);
+            else
+              ctx2.lineTo(cx + dx, cy + dy);
+          }
+          ctx2.closePath();
+          ctx2.stroke();
+        }
+        if (spawningAnim < 1) {
+          const S = 1.1 - 1.1 * Math.exp(-spawningAnim * 4);
+          const H = 1 * Math.exp(-spawningAnim * 5) + 0.02;
+          const alpha = Math.min(spawningAnim * 2, 1) * Math.min(Math.max(5 - spawningAnim * 5, 0), 1);
+          ctx2.fillStyle = `rgba(255,255,255,${alpha})`;
+          for (let i = 0; i < 6; i++) {
+            ctx2.beginPath();
+            const dx = Math.cos(i / 6 * 6.28) * 70 * S;
+            const dy = Math.sin(i / 6 * 6.28) * 70 / 2 * S;
+            const dx2 = Math.cos((i + 1) / 6 * 6.28) * 70 * S;
+            const dy2 = Math.sin((i + 1) / 6 * 6.28) * 70 / 2 * S;
+            ctx2.moveTo(cx + dx, cy + dy);
+            ctx2.lineTo(cx + dx2, cy + dy2);
+            ctx2.lineTo(cx + dx2, cy + dy2 - 400 * H);
+            ctx2.lineTo(cx + dx, cy + dy - 400 * H);
+            ctx2.fill();
+          }
+        }
+      });
+    }
+    function update(dT) {
+      activeTimer -= dT;
+      spawningAnim += dT;
+    }
+    function inRegion(tx, ty) {
+      const dx = tx - cx;
+      const dy = ty - cy;
+      return spawningAnim > 1 && dx * dx + dy * dy * 2 < 65 * 65;
+    }
+    function isTooCloseToGate(tx, ty) {
+      const dx = tx - cx;
+      const dy = ty - cy;
+      return dx * dx + dy * dy * 2 < 130 * 130;
+    }
+    function refreshActive() {
+      activeTimer = 0.2;
+    }
+    function getX() {
+      return cx;
+    }
+    function getY() {
+      return cy;
+    }
+    function getCurrentWord() {
+      return challengeWord;
+    }
+    function resolve() {
+      resolved = true;
+    }
+    function isResolved() {
+      return resolved;
+    }
+    function getEmote() {
+      return EMOTE.SOULA_COLA;
+    }
+    self = {
+      update,
+      render,
+      inRegion,
+      isTooCloseToGate,
+      refreshActive,
+      getX,
+      getY,
+      resolve,
+      isResolved,
+      getEmote,
+      getCurrentWord,
+      tags: ["gateway", "soda"],
+      order: -200
+    };
+    return self;
+  }
+  var soda_default2 = Soda;
+
   // src/main.js
   function initialize() {
     add(new hud_default());
     add(new arena_default());
     add(new soul_manager_default());
     add(new interaction_default());
-    add(new grim_default(0, 0));
-    for (let i = 0; i < 5; i++) {
-      add(new soul_default(-50 - 15 * i, Math.cos(i * 2) * 20));
-    }
+    add(new grim_default(-40, 0));
+    add(new soda_default2(0, 0, "SOLUKI"));
     audio_default().init();
   }
   initialize();

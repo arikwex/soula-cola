@@ -9,16 +9,18 @@ import Gateway from './gateway';
 import { EMOTE } from './emote-enum';
 import Interaction from './interaction';
 import HUD from './hud';
+import Soda from './soda';
 
 function initialize() {
     add(new HUD());
     add(new Arena());
     add(new SoulManager());
     add(new Interaction());
-    add(new Grim(0, 0));
-    for (let i = 0; i < 5; i++) {
-        add(new Soul(-50 - 15 * i, Math.cos(i * 2) * 20));
-    }
+    add(new Grim(-40, 0));
+    add(new Soda(0, 0, 'SOLUKI'));
+    // for (let i = 0; i < 5; i++) {
+    //     add(new Soul(-50 - 15 * i, Math.cos(i * 2) * 20));
+    // }
     Audio().init();
 }
 initialize();

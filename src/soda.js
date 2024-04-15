@@ -5,7 +5,7 @@ import { EMOTE } from "./emote-enum";
 import { add, remove } from './engine';
 import HexParticle from "./hex-particle";
 
-function Gateway(cx, cy, emote, challengeWord) {
+function Soda(cx, cy, challengeWord) {
     let self;
     let activeTimer = 0;
     let spawningAnim = 0;
@@ -17,16 +17,9 @@ function Gateway(cx, cy, emote, challengeWord) {
                 // Gateway vis
                 ctx.lineWidth = 5;
                 
-                if (emote == EMOTE.TRIANGLE) renderTriangleEmote(ctx);
-                if (emote == EMOTE.YOTA) renderYotaEmote(ctx);
-                if (emote == EMOTE.CIRCLE) renderCircleEmote(ctx);
-                if (emote == EMOTE.WAVE) renderWaveEmote(ctx);
-
+                // can here
                 if (activeTimer > 0) {
-                    if (emote == EMOTE.TRIANGLE) ctx.strokeStyle = ORANGE;
-                    if (emote == EMOTE.YOTA) ctx.strokeStyle = GREEN;
-                    if (emote == EMOTE.CIRCLE) ctx.strokeStyle = RED;
-                    if (emote == EMOTE.WAVE) ctx.strokeStyle = PURPLE;
+                    ctx.strokeStyle = WHITE;
                 } else {
                     ctx.strokeStyle = LIGHT_GRAY;
                 }
@@ -38,8 +31,8 @@ function Gateway(cx, cy, emote, challengeWord) {
                     else ctx.lineTo(cx+dx, cy+dy);
                 }
                 ctx.closePath();
-                ctx.moveTo(cx+55, cy);
-                ctx.ellipse(cx, cy, 55, 55/2, 0, 0, 6.28);
+                // ctx.moveTo(cx+55, cy);
+                // ctx.ellipse(cx, cy, 55, 55/2, 0, 0, 6.28);
                 ctx.stroke();
             }
 
@@ -65,49 +58,6 @@ function Gateway(cx, cy, emote, challengeWord) {
         });
     }
 
-    function renderTriangleEmote(ctx) {
-        ctx.strokeStyle = ORANGE;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(cx + 0, cy - 24);
-        ctx.lineTo(cx + 44, cy + 12);
-        ctx.lineTo(cx + -44, cy + 12);
-        ctx.closePath();
-        ctx.stroke();
-    }
-
-    function renderYotaEmote(ctx) {
-        ctx.strokeStyle = GREEN;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + 23);
-        ctx.lineTo(cx, cy + 5);
-        ctx.moveTo(cx - 40, cy - 14);
-        ctx.bezierCurveTo(cx - 30, cy + 8, cx + 30, cy + 8, cx + 40, cy - 14);
-        ctx.stroke();
-    }
-
-    function renderCircleEmote(ctx) {
-        ctx.strokeStyle = RED;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, 33, 21, 0, 0, 2 * Math.PI);
-        ctx.moveTo(cx, cy - 21);
-        ctx.lineTo(cx, cy + 21);
-        ctx.stroke();
-    }
-
-    function renderWaveEmote(ctx, dy) {
-        ctx.strokeStyle = PURPLE;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(cx - 45, cy - 10);
-        ctx.bezierCurveTo(cx - 15, cy - 30, cx + 15, cy + 10, cx + 45, cy - 10);
-        ctx.moveTo(cx - 45, cy + 10);
-        ctx.bezierCurveTo(cx - 15, cy - 10, cx + 15, cy + 30, cx + 45, cy + 10);
-        ctx.stroke();
-    }
-
     function update(dT) {
         activeTimer -= dT;
         spawningAnim += dT;
@@ -131,20 +81,10 @@ function Gateway(cx, cy, emote, challengeWord) {
 
     function getX() { return cx; }
     function getY() { return cy; }
-    function getEmote() { return emote; }
     function getCurrentWord() { return challengeWord; }
-    function resolve() {  resolved = true; }
+    function resolve() { resolved = true; }
     function isResolved() { return resolved; }
-
-    function onLevelClear() {
-        add(new HexParticle(cx, cy, emote));
-        remove([self]);
-    }
-
-    bus.on('level-clear', onLevelClear);
-    function onRemove() {
-        bus.off('level-clear', onLevelClear);
-    }
+    function getEmote() { return EMOTE.SOULA_COLA; }
 
     self = {
         update,
@@ -152,18 +92,17 @@ function Gateway(cx, cy, emote, challengeWord) {
         inRegion,
         isTooCloseToGate,
         refreshActive,
-        resolve,
-        isResolved,
         getX,
         getY,
+        resolve,
+        isResolved,
         getEmote,
         getCurrentWord,
-        onRemove,
-        tags: ['gateway'],
+        tags: ['gateway', 'soda'],
         order: -200,
     };
 
     return self;
 }
 
-export default Gateway;
+export default Soda;

@@ -90,12 +90,13 @@ function Interaction() {
                 add(new LetterParticle(cx, cy, nextLetterText));
                 if (numFilled == text.length) {
                     activeGateway.resolve();
+                    bus.emit('utterance', activeGateway.getCurrentWord().toUpperCase());
                     SG = activeGateway;
                     setTimeout(() => {
                         bus.emit('consume', { gateway: SG, emote: SG.getEmote() });
                         add(new HexParticle(SG.getX(), SG.getY(), SG.getEmote()));
                         remove([SG]);
-                    }, 500);
+                    }, 150);
                     activeGateway = null;
                 } else {
                     updateFilledText();
