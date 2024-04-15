@@ -1218,6 +1218,7 @@
     let availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];
     let gatewayHistory = [];
     let gameMode = MODE.NEED_COLA;
+    let level = 0;
     function assignSoulEmote(soul, emote) {
       if (soul == null) {
         return;
@@ -1310,7 +1311,18 @@
       return a[Math.floor(Math.random() * a.length)];
     }
     function generateChallengeWord() {
-      const difficulty = 2;
+      let difficulty = 1;
+      if (level <= 1) {
+        difficulty = 2;
+      } else if (level == 2) {
+        difficulty = 2;
+      } else if (level == 3) {
+        difficulty = Math.floor(1 + Math.random() * 2.5);
+      } else if (level <= 6) {
+        difficulty = Math.floor(1 + Math.random() * 2.9);
+      } else {
+        difficulty = Math.floor(2 + Math.random() * 2.3);
+      }
       const starterVowels = ["A", "E", "I", "O", "U"];
       const syllabs = [
         ["BA", "CA", "CHA", "FA", "GA", "HA", "JA", "KA", "LA", "MA", "NA", "PA", "QA", "RA", "SA", "SHA", "TA", "THA", "VA", "XA", "ZA"],
@@ -1371,10 +1383,27 @@
     }
     function onSodaPop() {
       gameMode = MODE.WAITING_FOR_SOULS;
+      level += 1;
+      if (level <= 1) {
+        availableEmotes = [EMOTE.TRIANGLE];
+      } else if (level == 2) {
+        availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];
+      } else if (level == 3) {
+        availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE, EMOTE.YOTA];
+      } else {
+        availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE, EMOTE.YOTA, EMOTE.WAVE];
+      }
+    }
+    function onSpawnSouls() {
+      for (let i = 0; i < Math.min(level * 3, 20); i++) {
+        add(new soul_default((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80));
+      }
     }
     on("soda-pop", onSodaPop);
+    on("spawn-souls", onSpawnSouls);
     function onRemove() {
       off("soda-pop", onSodaPop);
+      off("spawn-souls", onSpawnSouls);
     }
     return {
       update,
@@ -1680,9 +1709,6 @@
     function endSodaAnimation() {
       add(new hex_particle_default(0, 0, -1));
       emit("spawn-souls");
-      for (let i = 0; i < 1; i++) {
-        add(new soul_default((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80));
-      }
       remove(getObjectsByTag("soda"));
     }
     function onConsume({ emote }) {

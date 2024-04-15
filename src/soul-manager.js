@@ -3,6 +3,7 @@ import { EMOTE } from "./emote-enum";
 import { add, getObjectsByTag } from "./engine";
 import Gateway from './gateway';
 import Soda from './soda';
+import Soul from './soul';
 
 const MODE = {
     WAITING_FOR_SOULS: 0,
@@ -16,6 +17,7 @@ function SoulManager() {
     let availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];//, EMOTE.YOTA, EMOTE.WAVE];
     let gatewayHistory = [];
     let gameMode = MODE.NEED_COLA;
+    let level = 0;
 
     function assignSoulEmote(soul, emote) {
         if (soul == null) {
@@ -122,7 +124,13 @@ function SoulManager() {
     }
 
     function generateChallengeWord() {
-        const difficulty = 2;
+        let difficulty = 1;
+        if (level <= 1) { difficulty = 2; }
+        else if (level == 2) { difficulty = 2; }
+        else if (level == 3) { difficulty = Math.floor(1 + Math.random() * 2.5); }
+        else if (level <= 6) { difficulty = Math.floor(1 + Math.random() * 2.9); }
+        else { difficulty = Math.floor(2 + Math.random() * 2.3); }
+
         const starterVowels = ['A','E','I','O','U'];
         const syllabs = [
             ['BA', 'CA', 'CHA', 'FA', 'GA', 'HA', 'JA', 'KA', 'LA', 'MA', 'NA', 'PA', 'QA','RA', 'SA', 'SHA', 'TA', 'THA', 'VA', 'XA', 'ZA'],
@@ -192,11 +200,29 @@ function SoulManager() {
 
     function onSodaPop() {
         gameMode = MODE.WAITING_FOR_SOULS;
+        level += 1;
+        if (level <= 1) {
+            availableEmotes = [EMOTE.TRIANGLE];
+        } else if (level == 2) {
+            availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE];
+        } else if (level == 3) {
+            availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE, EMOTE.YOTA];
+        } else {
+            availableEmotes = [EMOTE.TRIANGLE, EMOTE.CIRCLE, EMOTE.YOTA, EMOTE.WAVE];
+        }
+    }
+
+    function onSpawnSouls() {
+        for (let i = 0; i < Math.min(level * 3, 20); i++) {
+            add(new Soul((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80));
+        }
     }
 
     bus.on('soda-pop', onSodaPop);
+    bus.on('spawn-souls', onSpawnSouls);
     function onRemove() {
         bus.off('soda-pop', onSodaPop);
+        bus.off('spawn-souls', onSpawnSouls);
     }
 
     return {

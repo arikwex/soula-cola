@@ -74,9 +74,6 @@ function Camera() {
     function endSodaAnimation() {
         add(new HexParticle(0, 0, -1));
         bus.emit('spawn-souls');
-        for (let i = 0; i < 1; i++) {
-            add(new Soul((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80));
-        }
         remove(getObjectsByTag('soda'));
     }
 

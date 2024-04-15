@@ -1,6 +1,5 @@
 HITLIST
 =======
-- Soda auto-name / auto-color
 - Soul manager behavior / level progress / layout to match soda type / word difficulty
 - Game Over / Reset
 
