@@ -1,7 +1,6 @@
 HITLIST
 =======
 - Drink Soula Cola to summon a bunch of souls
-- THE Soda Animation
 - Audio + Music
     - soul spawn sound
     - soul angry

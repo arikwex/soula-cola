@@ -28,8 +28,9 @@ function AudioEngine() {
     meepAudio.volume = 0.7;
     popAudio.volume = 1.0;
 
+    // Global is laziness, but the soda animation is time-matched to the audio playback
     window.sodaAudio = sodaAudio;
-    sodaAudio.loop = true;
+    window.sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
 
@@ -49,7 +50,6 @@ function AudioEngine() {
     }
 
     function init() {
-        setTimeout(() => { bus.emit('soda-pop'); }, 1000);
         bus.on('soda-pop', () => { sodaAudio.currentTime = 0; sodaAudio.play(); });
         bus.on('utterance', (txt) => { utter(txt); });
         bus.on('interact-fill', () => { lightTapAudio.currentTime = 0; lightTapAudio.play(); });

@@ -1,5 +1,4 @@
 import { canvas, ctx, retainTransform } from './canvas';
-import { TAG_CAMERA } from './tags';
 
 let gameObjects = [];
 let gameObjectsByTag = {};
@@ -31,10 +30,6 @@ function tick(currentFrameMs) {
         lastFrameMs = currentFrameMs;
     });
     requestAnimationFrame(tick);
-}
-
-function ultrazoomSoda() {
-    
 }
 
 function add(obj) {

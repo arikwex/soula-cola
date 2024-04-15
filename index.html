@@ -147,7 +147,7 @@
     meepAudio.volume = 0.7;
     popAudio.volume = 1;
     window.sodaAudio = sodaAudio;
-    sodaAudio.loop = true;
+    window.sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
     function utter(txt) {
@@ -167,9 +167,6 @@
       }
     }
     function init() {
-      setTimeout(() => {
-        emit("soda-pop");
-      }, 1e3);
       on("soda-pop", () => {
         sodaAudio.currentTime = 0;
         sodaAudio.play();
@@ -1196,7 +1193,7 @@
         ctx2.fill();
         ctx2.font = "0.5px monospace";
         ctx2.fillStyle = BLACK;
-        const label = "Sour Coffee Bile";
+        const label = "Unholy Snake Venom";
         const textWidth2 = ctx2.measureText(label).width;
         const xOffset2 = -textWidth2 / 2;
         ctx2.fillText(label, xOffset2, -H * 0.27);
@@ -1254,10 +1251,18 @@
   // src/camera.js
   function Camera() {
     let self;
+    let tweenTime;
     function render(ctx2) {
+      let tweenP = 1 - tweenTime;
+      let tweenQ = tweenTime;
+      const grim = getObjectsByTag("grim")[0];
+      if (grim) {
+        ctx2.translate(-grim.getX() * 0.4 * tweenP, -grim.getY() * 0.4 * tweenP);
+        ctx2.scale(1 + 0.3 * tweenP, 1 + 0.3 * tweenP);
+      }
       const soda = getObjectsByTag("soda")[0];
       if (soda) {
-        ctx2.translate(-soda.getX(), -soda.getY());
+        ctx2.translate(-soda.getX() * tweenQ, -soda.getY() * tweenQ);
         let s = 0;
         let t = window.sodaAudio.currentTime;
         if (t < 3) {
@@ -1265,15 +1270,29 @@
         } else {
           s = 3 * 4 - (1 - Math.exp(-(t - 3) * 4)) * 25;
         }
-        ctx2.scale(45 + s, 45 + s);
-        ctx2.translate(0, 5);
+        ctx2.scale(1 + (44 + s) * tweenQ, 1 + (44 + s) * tweenQ);
+        ctx2.translate(0, 5 * tweenQ);
       }
     }
     function update(dT) {
+      if (tweenTime < 1) {
+        tweenTime += dT;
+      }
+    }
+    function onConsume({ emote }) {
+      if (emote == EMOTE.SOULA_COLA) {
+        tweenTime = 0;
+        emit("soda-pop");
+      }
+    }
+    on("consume", onConsume);
+    function onRemove() {
+      off("consume", onConsume);
     }
     self = {
       update,
       render,
+      onRemove,
       tags: ["camera"],
       order: -9999
     };

@@ -129,7 +129,7 @@ function Soda(cx, cy) {
             // Label
             ctx.font = "0.5px monospace";
             ctx.fillStyle = BLACK;
-            const label = "Sour Coffee Bile";
+            const label = "Unholy Snake Venom";
             const textWidth2 = ctx.measureText(label).width;
             const xOffset2 = -textWidth2 / 2;
             ctx.fillText(label, xOffset2, -H * 0.27);
