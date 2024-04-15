@@ -2,10 +2,11 @@ import * as bus from './bus';
 import { EMOTE } from "./emote-enum";
 import { add, getObjectsByTag } from "./engine";
 import Gateway from './gateway';
+import Soda from './soda';
 
 const MODE = {
-    PLAYING: 0,
-    ENDED: 1,
+    WAITING_FOR_SOULS: 0,
+    PLAYING: 1,
     NEED_COLA: 2,
 }
 
@@ -154,35 +155,54 @@ function SoulManager() {
             return;
         }
         tick -= 1;
+        const numSouls = getNumSouls();
 
         // Logic for emote assignment
-        const numAssignments = getNumAssignments();
-        if (numAssignments == 0) {
-            assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
-        } else {
-            if (Math.random() > 0.75) {
+        if (numSouls > 0) {
+            if (gameMode == MODE.WAITING_FOR_SOULS) {
+                gameMode = MODE.PLAYING;
+            }
+            const numAssignments = getNumAssignments();
+            if (numAssignments == 0) {
                 assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+            } else {
+                if (Math.random() > 0.75) {
+                    assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+                }
             }
         }
 
         // Logic for gateway spawn
-        const numSouls = getNumSouls();
-
         if (gameMode == MODE.PLAYING) {
             if (numSouls > 0 && getNumGateways() < availableEmotes.length && Math.random() > 0.75) {
                 spawnRandomGateway();
             }
             if (numSouls == 0) {
-                gameMode = MODE.ENDED;
+                gameMode = MODE.NEED_COLA;
                 bus.emit('level-clear');
                 clearAll();
+
+                setTimeout(() => {
+                    add(new Gateway(0, 0, EMOTE.SOULA_COLA, 'SOLUKI'));
+                    add(new Soda(0, 0));
+                }, 2000);
             }
         }
+    }
+
+    function onSodaPop() {
+        gameMode = MODE.WAITING_FOR_SOULS;
+    }
+
+    bus.on('soda-pop', onSodaPop);
+    function onRemove() {
+        bus.off('soda-pop', onSodaPop);
     }
 
     return {
         update,
         render,
+        onRemove,
         tags: ['soul-manager'],
         order: 0,
     };

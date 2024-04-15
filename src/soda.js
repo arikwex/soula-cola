@@ -51,10 +51,10 @@ function Soda(cx, cy) {
             }
 
             // Fumes
-            if (panim >= 0) {
+            if (panim >= 0 && panim <= 1.4) {
                 for (let i = 0; i < 3; i++) {
                     retainTransform(() => {
-                        const dh = -panim * 18 + i * 2+1;
+                        const dh = -panim * 22 + i * 2+1;
                         const dx = Math.sin(i * 2) * panim * 1.5+0.5;
                         ctx.lineWidth = 0.4;
                         ctx.strokeStyle = WHITE;
@@ -152,12 +152,14 @@ function Soda(cx, cy) {
     }
 
     function update(dT) {
-        anim = window.sodaAudio.currentTime;
+        if (!window.sodaAudio.paused) {
+            anim = window.sodaAudio.currentTime;
+        }
         joltTime += dT;
 
-        if (joltIndex == joltTiming.length - 1 && anim < 0.5) {
-            joltIndex = 0;
-        } 
+        // if (joltIndex == joltTiming.length - 1 && anim < 0.5) {
+        //     joltIndex = 0;
+        // } 
         const targetAnimTime = joltTiming[joltIndex];
         if (anim >= targetAnimTime) {
             joltHeight = Math.random() * 0.1 + 0.1;

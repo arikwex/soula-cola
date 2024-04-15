@@ -147,7 +147,6 @@
     meepAudio.volume = 0.7;
     popAudio.volume = 1;
     window.sodaAudio = sodaAudio;
-    window.sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
     function utter(txt) {
@@ -191,6 +190,10 @@
         transcendAudio.play();
       });
       on("spawn-gateway", () => {
+        skylightAudio.currentTime = 0;
+        skylightAudio.play();
+      });
+      on("spawn-souls", () => {
         skylightAudio.currentTime = 0;
         skylightAudio.play();
       });
@@ -446,12 +449,19 @@
     function getY() {
       return y;
     }
+    function setTargetPose(tx, ty, tvx) {
+      x = tx * 0.05 + x * 0.95;
+      y = ty * 0.05 + y * 0.95;
+      vx = tvx;
+      vy = 0;
+    }
     self = {
       update,
       render,
       onRemove,
       getX,
       getY,
+      setTargetPose,
       tags: ["grim", "hitbox"],
       order: 50
     };
@@ -467,6 +477,339 @@
     CIRCLE: 2,
     WAVE: 3
   };
+
+  // src/poof-particle.js
+  function PoofParticle(cx, cy, ang) {
+    let anim = 0;
+    let r1 = Math.random() * 0.6 + 0.9;
+    if (!ang) {
+      ang = Math.random() * 3 - 1.5;
+    }
+    function render(ctx2) {
+      retainTransform(() => {
+        const LW = Math.exp(-anim * 5) * 20 * Math.max(1 - anim / 2, 0);
+        ctx2.lineWidth = LW;
+        let R1 = 60 * r1 * (1 - Math.exp(-anim * 5)) + anim * 10;
+        ctx2.strokeStyle = RED;
+        ctx2.beginPath();
+        ctx2.ellipse(cx, cy + LW * 0.5, R1, R1 / 2, ang * 0.8, 0, 6.28);
+        ctx2.stroke();
+        ctx2.strokeStyle = WHITE;
+        ctx2.beginPath();
+        ctx2.ellipse(cx, cy, R1, R1 / 2, ang, 0, 6.28);
+        ctx2.stroke();
+      });
+    }
+    function update(dT) {
+      anim += dT;
+      if (anim > 2) {
+        return true;
+      }
+    }
+    return {
+      update,
+      render,
+      order: 100
+    };
+  }
+  var poof_particle_default = PoofParticle;
+
+  // src/soul.js
+  function Soul(x, y) {
+    let self = null;
+    let vx = 0;
+    let vy = 0;
+    let SPEED = 90 + Math.random() * 40;
+    let HEIGHT = 0.9 + Math.random() * 1;
+    let WIDTH = 0.9 + Math.random() * 0.4;
+    let FACE_HEIGHT = Math.random() * 8;
+    let FACE_WIDTH = Math.random() * 2.3 + 1.7;
+    let FACE_PLACE = -1 + Math.random() * 8;
+    let angle = Math.random() * 7;
+    let anim = Math.random() * 100;
+    let desiredEmote = null;
+    let hunger = 0;
+    let hungerAnim = Math.random() * 100;
+    let activeGateway = null;
+    function getFadeFactor() {
+      return 1 - Math.max(hunger - 1, 0);
+    }
+    function getFaceColor() {
+      let q = getFadeFactor();
+      let R = 0;
+      let G = 162;
+      let B = 232;
+      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
+        R = 255;
+        G = 255;
+        B = 230;
+      }
+      let A = 1;
+      R = R * q + 250 * (1 - q);
+      G = G * q + 130 * (1 - q);
+      B = B * q + 130 * (1 - q);
+      A = A * q + 0.6 * (1 - q);
+      return `rgba(${R},${G},${B},${A})`;
+    }
+    function getTorsoColor() {
+      let q = getFadeFactor();
+      let R = 63;
+      let G = 72;
+      let B = 204;
+      if (activeGateway != null && activeGateway.getEmote() == desiredEmote) {
+        R = 255;
+        G = 230;
+        B = 170;
+      }
+      let A = 1;
+      R = R * q + 250 * (1 - q);
+      G = G * q + 40 * (1 - q);
+      B = B * q + 40 * (1 - q);
+      A = A * q + 0.6 * (1 - q);
+      return `rgba(${R},${G},${B},${A})`;
+    }
+    function renderFace(ctx2, C, S, H) {
+      ctx2.strokeStyle = getFaceColor();
+      S -= 0.2;
+      if (S < 0) {
+        const wd = Math.max(Math.min(-16 * S, 14), 0);
+        const s = (14 - wd) * 0.5;
+        ctx2.lineWidth = wd * WIDTH;
+        ctx2.beginPath();
+        ctx2.moveTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT - s * 0.7 - 6);
+        ctx2.lineTo(C * (5 + s) * WIDTH, (-20 + H) * HEIGHT + s * 0.7 - 2 + FACE_HEIGHT);
+        ctx2.stroke();
+        if (activeGateway != null) {
+          ctx2.strokeStyle = BLACK;
+        } else {
+          ctx2.strokeStyle = WHITE;
+        }
+        ctx2.lineWidth = 3 * wd / 14;
+        ctx2.beginPath();
+        ctx2.moveTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
+        ctx2.lineTo(C * (7 + s) * WIDTH - FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
+        ctx2.moveTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE);
+        ctx2.lineTo(C * (7 + s) * WIDTH + FACE_WIDTH * S, (-20 + H) * HEIGHT - FACE_PLACE + 0.1);
+        ctx2.stroke();
+      }
+    }
+    function renderBody(ctx2, C, S, H) {
+      const col = getTorsoColor();
+      ctx2.fillStyle = col;
+      ctx2.strokeStyle = col;
+      const Q = H * 3;
+      ctx2.lineWidth = 16 * WIDTH + Q;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -5 - Q * WIDTH * 0.5 - WIDTH * 2);
+      ctx2.lineTo(0, (-20 + H * 2) * HEIGHT);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+      ctx2.lineWidth = 18 * WIDTH;
+      ctx2.beginPath();
+      ctx2.moveTo(C * 3, (-20 + H) * HEIGHT - 7);
+      ctx2.lineTo(C * 3, (-20 + H) * HEIGHT - 2 + FACE_HEIGHT);
+      ctx2.stroke();
+      ctx2.strokeStyle = col;
+      ctx2.lineWidth = 5 * WIDTH;
+      ctx2.beginPath();
+      ctx2.moveTo(S * 6, (-20 + H) * HEIGHT - 11);
+      ctx2.lineTo(S * 7, (-20 + H) * HEIGHT - 16);
+      ctx2.moveTo(-S * 6, (-20 + H) * HEIGHT - 11);
+      ctx2.lineTo(-S * 7, (-20 + H) * HEIGHT - 16);
+      ctx2.stroke();
+    }
+    function renderEmote(ctx2) {
+      if (desiredEmote != null) {
+        if (desiredEmote == EMOTE.TRIANGLE) {
+          renderTriangleEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.YOTA) {
+          renderYotaEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.CIRCLE) {
+          renderCircleEmote(ctx2, 0);
+        } else if (desiredEmote == EMOTE.WAVE) {
+          renderWaveEmote(ctx2, 0);
+        }
+      }
+    }
+    function renderTriangleEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 * HEIGHT - 34 + dy);
+      ctx2.lineTo(7, -20 * HEIGHT - 24 + dy);
+      ctx2.lineTo(-7, -20 * HEIGHT - 24 + dy);
+      ctx2.closePath();
+      ctx2.stroke();
+      ctx2.strokeStyle = `rgba(255,192,14,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
+    }
+    function renderYotaEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -20 * HEIGHT - 24);
+      ctx2.lineTo(0, -20 * HEIGHT - 28);
+      ctx2.moveTo(-5, -20 * HEIGHT - 34);
+      ctx2.bezierCurveTo(-5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 28, 5, -20 * HEIGHT - 34);
+      ctx2.stroke();
+      ctx2.strokeStyle = `rgba(34,200,15,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
+    }
+    function renderCircleEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.arc(0, -20 * HEIGHT - 29 + dy, 6.5, -Math.PI / 2, 1.5 * Math.PI);
+      ctx2.lineTo(0, -20 * HEIGHT - 24 + dy);
+      ctx2.stroke();
+      ctx2.strokeStyle = `rgba(237,28,38,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
+    }
+    function renderWaveEmote(ctx2, dy) {
+      ctx2.strokeStyle = `rgba(0,0,0,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 5;
+      ctx2.beginPath();
+      ctx2.moveTo(-7, -20 * HEIGHT - 29 - 3 + dy);
+      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 - 3 + dy, 4, -20 * HEIGHT - 21 - 3 + dy, 7, -20 * HEIGHT - 29 - 3 + dy);
+      ctx2.moveTo(-7, -20 * HEIGHT - 29 + 3 + dy);
+      ctx2.bezierCurveTo(-4, -20 * HEIGHT - 37 + 3 + dy, 4, -20 * HEIGHT - 21 + 3 + dy, 7, -20 * HEIGHT - 29 + 3 + dy);
+      ctx2.stroke();
+      ctx2.strokeStyle = `rgba(163,73,164,${Math.cos(hungerAnim) * 0.5 + 0.5})`;
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
+    }
+    function render(ctx2) {
+      retainTransform(() => {
+        ctx2.translate(x, y);
+        const C = Math.cos(angle);
+        const S = Math.sin(angle);
+        const H = Math.abs(Math.cos(anim * 12)) * 2;
+        renderBody(ctx2, C, S, H);
+        renderFace(ctx2, C, S, H);
+        renderEmote(ctx2);
+      });
+    }
+    function update(dT) {
+      let tx = 0;
+      let ty = 0;
+      const grim = getObjectsByTag("grim")[0];
+      if (grim) {
+        tx = grim.getX() - x;
+        ty = grim.getY() - y;
+      }
+      const M = Math.sqrt(tx * tx + ty * ty);
+      if (M > 40) {
+        tx *= SPEED / M;
+        ty *= SPEED / M;
+        vx += (tx - vx) * 3 * dT;
+        vy += (ty - vy) * 3 * dT;
+      } else {
+        vx += -vx * 5 * dT;
+        vy += -vy * 5 * dT;
+      }
+      let bx = x;
+      let by = y;
+      x += vx * dT;
+      y += vy * dT;
+      handleCollision();
+      let isMoving = false;
+      let bx2 = bx - x;
+      let by2 = by - y;
+      if (bx2 * bx2 + by2 * by2 < 10 * dT) {
+        anim += dT * (0.3 + WIDTH * 0.05);
+      } else {
+        anim += dT * (1 - HEIGHT * 0.07);
+        isMoving = true;
+      }
+      if (isMoving) {
+        angle = -Math.atan2(vy, vx);
+      } else {
+        angle += Math.cos(anim * 5) * 1 * dT;
+      }
+      if (desiredEmote !== null) {
+        hunger += dT * 0.05;
+        if (hunger < 1) {
+          hungerAnim = 0;
+        }
+        if (hunger > 1) {
+          hungerAnim += dT * (hunger - 1) * 45;
+        }
+        if (hunger > 2) {
+          add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
+          setTimeout(() => {
+            add(new poof_particle_default(x, y - 20 * HEIGHT / 2));
+          }, Math.random() * 100 + 50);
+          emit("exploded");
+          return true;
+        }
+      }
+      const gateways = getObjectsByTag("gateway");
+      activeGateway = null;
+      for (let i = 0; i < gateways.length; i++) {
+        if (gateways[i].inRegion(x, y)) {
+          activeGateway = gateways[i];
+          activeGateway.refreshActive();
+          break;
+        }
+      }
+      self.order = 50 + y / 100;
+    }
+    function handleCollision() {
+      const hitboxes = getObjectsByTag("hitbox");
+      const R = 14;
+      for (let i = 0; i < hitboxes.length; i++) {
+        if (hitboxes[i] == self) {
+          continue;
+        }
+        const dx = hitboxes[i].getX() - x;
+        const dy = hitboxes[i].getY() - y;
+        const M = Math.sqrt(dx * dx + dy * dy);
+        if (M < R + R) {
+          x = hitboxes[i].getX() - dx / M * R * 2 + Math.random() - 0.5;
+          y = hitboxes[i].getY() - dy / M * R * 2 + Math.random() - 0.5;
+        }
+      }
+    }
+    function getX() {
+      return x;
+    }
+    function getY() {
+      return y;
+    }
+    function onAssignEmote({ soul, emote }) {
+      if (self !== soul) {
+        return;
+      }
+      desiredEmote = emote;
+    }
+    function onConsume({ gateway, emote }) {
+      if (activeGateway == gateway && desiredEmote == emote) {
+        remove([self]);
+        emit("consume-success");
+      }
+    }
+    on("assign-emote", onAssignEmote);
+    on("consume", onConsume);
+    function onRemove() {
+      off("assign-emote", onAssignEmote);
+      off("consume", onConsume);
+    }
+    self = {
+      update,
+      render,
+      getX,
+      getY,
+      onRemove,
+      tags: ["soul", "hitbox"],
+      order: 40
+    };
+    return self;
+  }
+  var soul_default = Soul;
 
   // src/hex-particle.js
   function HexParticle(cx, cy, emote) {
@@ -694,10 +1037,170 @@
   }
   var gateway_default = Gateway;
 
+  // src/soda.js
+  function Soda(cx, cy) {
+    let self;
+    let anim = 0;
+    let joltTime = 10;
+    let joltHeight = 0;
+    let joltAngle = 0;
+    const joltTiming = [0.1, 0.73, 1.15, 1.53, 1.9, 2.1, 2.3, 2.45, 2.55, 2.7, 2.8, 2.9, 3, 3.1, 1e3];
+    const joltRate = [8, 8, 8, 8, 10, 12, 14, 16, 16, 16, 16, 16, 16, 16, 17];
+    let joltIndex = 0;
+    function render(ctx2) {
+      retainTransform(() => {
+        ctx2.translate(cx, cy);
+        const W = 6;
+        const H = 10;
+        const pivotAngle = joltAngle * Math.sin(joltTime * 20) * Math.exp(-joltTime * joltRate[joltIndex]);
+        const q = joltTime * joltRate[joltIndex] / 6;
+        const jump = Math.max(joltHeight * (q * 4 - q * q * 14) / 4, 0) / (0.2 + joltRate[joltIndex] / 20);
+        ctx2.fillStyle = "rgba(0,0,0,0.12)";
+        ctx2.beginPath();
+        ctx2.ellipse(0, 0, W * 0.7 * (1 - 5 * jump), W * 0.3 * (1 - 4 * jump), 0, 0, 6.28);
+        ctx2.fill();
+        ctx2.translate(0, -3);
+        ctx2.rotate(pivotAngle);
+        ctx2.translate(0, 3 - jump * 110);
+        const panim = anim - 3;
+        if (panim >= 0) {
+          for (let i = 0; i < 10; i++) {
+            retainTransform(() => {
+              const dh = -((panim + Math.cos(panim * 4 + i * 0.4) * 0.04 + i * 0.73 + 10) % 0.5) * 8;
+              const dx = Math.sin(i * 2 + i * i * 7) * 1 + 0.7;
+              ctx2.lineWidth = Math.max(0.5 / (1 - dh / 8) * Math.min(Math.max(3 - panim, 0), 1), 1e-3);
+              ctx2.strokeStyle = TEAL;
+              ctx2.beginPath();
+              ctx2.moveTo(-W * 0.4 + dx, -H + dh);
+              ctx2.lineTo(-W * 0.4 + dx, -H + dh + 0.01);
+              ctx2.stroke();
+            });
+          }
+        }
+        if (panim >= 0 && panim <= 1.4) {
+          for (let i = 0; i < 3; i++) {
+            retainTransform(() => {
+              const dh = -panim * 22 + i * 2 + 1;
+              const dx = Math.sin(i * 2) * panim * 1.5 + 0.5;
+              ctx2.lineWidth = 0.4;
+              ctx2.strokeStyle = WHITE;
+              ctx2.beginPath();
+              ctx2.moveTo(-W * 0.4 + Math.cos(panim * 16 + i) * 0.2 + dx, -H * 0.8 + dh);
+              ctx2.bezierCurveTo(-W * 0.4 + Math.cos(panim * 16 + 1.5 + i) * 0.3 + dx, -H * 0.9 + dh, -W * 0.4 + Math.cos(panim * 16 + 3 + i) * 0.4 + dx, -H * 1 + dh, -W * 0.4 + Math.cos(panim * 16 + 4.5 + i) * 0.5 + dx, -H * 1.1 + dh);
+              ctx2.stroke();
+            });
+          }
+        }
+        ctx2.lineWidth = 1;
+        ctx2.strokeStyle = LIGHT_GRAY;
+        ctx2.beginPath();
+        if (anim > 3.05) {
+          ctx2.moveTo(-W * 0.3, -H - 0.3);
+          ctx2.lineTo(-W * 0.06, -H - 1.2);
+        } else {
+          ctx2.moveTo(-W * 0.3, -H - 0.4);
+          ctx2.lineTo(0, -H - 0.4);
+        }
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.lineWidth = 1;
+        ctx2.strokeStyle = DARK_BLUE;
+        ctx2.fillStyle = DARK_BLUE;
+        ctx2.beginPath();
+        ctx2.moveTo(-W / 2, 0);
+        ctx2.lineTo(-W / 2, -H);
+        ctx2.lineTo(W / 2, -H);
+        ctx2.lineTo(W / 2, 0);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.lineWidth = 0.2;
+        ctx2.strokeStyle = TEAL;
+        ctx2.fillStyle = TEAL;
+        ctx2.beginPath();
+        ctx2.moveTo(-W / 2 - 0.4, -H * 0.2);
+        ctx2.lineTo(-W / 2 - 0.4, -H * 0.7);
+        ctx2.lineTo(W / 2 + 0.4, -H * 0.7);
+        ctx2.lineTo(W / 2 + 0.4, -H * 0.2);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.font = "0.8px monospace";
+        ctx2.fillStyle = WHITE;
+        const textWidth = ctx2.measureText("SOULA COLA").width;
+        const xOffset = -textWidth / 2;
+        ctx2.fillText("SOULA COLA", xOffset, -H * 0.85);
+        ctx2.lineWidth = 0.2;
+        ctx2.strokeStyle = BLUE;
+        ctx2.fillStyle = BLUE;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -H * 0.6);
+        ctx2.lineTo(-H * 0.1, -H * 0.5);
+        ctx2.lineTo(0, -H * 0.4);
+        ctx2.lineTo(H * 0.1, -H * 0.5);
+        ctx2.closePath();
+        ctx2.stroke();
+        ctx2.fill();
+        ctx2.font = "0.5px monospace";
+        ctx2.fillStyle = BLACK;
+        const label = "Unholy Snake Venom";
+        const textWidth2 = ctx2.measureText(label).width;
+        const xOffset2 = -textWidth2 / 2;
+        ctx2.fillText(label, xOffset2, -H * 0.27);
+        if (joltTime < 0.2) {
+          const jt = joltTime / 0.2;
+          const ar = 1 + jt * 3;
+          const br = 3 + jt;
+          ctx2.lineWidth = 0.3;
+          ctx2.strokeStyle = WHITE;
+          ctx2.beginPath();
+          ctx2.moveTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1) * ar, -H + Math.sin(joltIndex * 4 + 1) * ar);
+          ctx2.lineTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1) * br, -H + Math.sin(joltIndex * 4 + 1) * br);
+          ctx2.moveTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1.5) * ar, -H + Math.sin(joltIndex * 4 + 1.5) * ar);
+          ctx2.lineTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1.5) * br, -H + Math.sin(joltIndex * 4 + 1.5) * br);
+          ctx2.stroke();
+        }
+      });
+    }
+    function update(dT) {
+      if (!window.sodaAudio.paused) {
+        anim = window.sodaAudio.currentTime;
+      }
+      joltTime += dT;
+      const targetAnimTime = joltTiming[joltIndex];
+      if (anim >= targetAnimTime) {
+        joltHeight = Math.random() * 0.1 + 0.1;
+        joltAngle = 0.25;
+        if (joltIndex % 2 == 0) {
+          joltAngle *= -1;
+        }
+        joltTime = 0;
+        joltIndex += 1;
+      }
+      self.order = 50 + cy / 100;
+    }
+    function getX() {
+      return cx;
+    }
+    function getY() {
+      return cy;
+    }
+    self = {
+      update,
+      render,
+      getX,
+      getY,
+      tags: ["soda"],
+      order: -199
+    };
+    return self;
+  }
+  var soda_default2 = Soda;
+
   // src/soul-manager.js
   var MODE = {
-    PLAYING: 0,
-    ENDED: 1,
+    WAITING_FOR_SOULS: 0,
+    PLAYING: 1,
     NEED_COLA: 2
   };
   function SoulManager() {
@@ -828,29 +1331,46 @@
         return;
       }
       tick2 -= 1;
-      const numAssignments = getNumAssignments();
-      if (numAssignments == 0) {
-        assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
-      } else {
-        if (Math.random() > 0.75) {
+      const numSouls = getNumSouls();
+      if (numSouls > 0) {
+        if (gameMode == MODE.WAITING_FOR_SOULS) {
+          gameMode = MODE.PLAYING;
+        }
+        const numAssignments = getNumAssignments();
+        if (numAssignments == 0) {
           assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+        } else {
+          if (Math.random() > 0.75) {
+            assignSoulEmote(getRandomFreeSoul(), getRandomEmote());
+          }
         }
       }
-      const numSouls = getNumSouls();
       if (gameMode == MODE.PLAYING) {
         if (numSouls > 0 && getNumGateways() < availableEmotes.length && Math.random() > 0.75) {
           spawnRandomGateway();
         }
         if (numSouls == 0) {
-          gameMode = MODE.ENDED;
+          gameMode = MODE.NEED_COLA;
           emit("level-clear");
           clearAll();
+          setTimeout(() => {
+            add(new gateway_default(0, 0, EMOTE.SOULA_COLA, "SOLUKI"));
+            add(new soda_default2(0, 0));
+          }, 2e3);
         }
       }
+    }
+    function onSodaPop() {
+      gameMode = MODE.WAITING_FOR_SOULS;
+    }
+    on("soda-pop", onSodaPop);
+    function onRemove() {
+      off("soda-pop", onSodaPop);
     }
     return {
       update,
       render,
+      onRemove,
       tags: ["soul-manager"],
       order: 0
     };
@@ -1087,174 +1607,19 @@
   }
   var hud_default = HUD;
 
-  // src/soda.js
-  function Soda(cx, cy) {
-    let self;
-    let anim = 0;
-    let joltTime = 10;
-    let joltHeight = 0;
-    let joltAngle = 0;
-    const joltTiming = [0.1, 0.73, 1.15, 1.53, 1.9, 2.1, 2.3, 2.45, 2.55, 2.7, 2.8, 2.9, 3, 3.1, 1e3];
-    const joltRate = [8, 8, 8, 8, 10, 12, 14, 16, 16, 16, 16, 16, 16, 16, 17];
-    let joltIndex = 0;
-    function render(ctx2) {
-      retainTransform(() => {
-        ctx2.translate(cx, cy);
-        const W = 6;
-        const H = 10;
-        const pivotAngle = joltAngle * Math.sin(joltTime * 20) * Math.exp(-joltTime * joltRate[joltIndex]);
-        const q = joltTime * joltRate[joltIndex] / 6;
-        const jump = Math.max(joltHeight * (q * 4 - q * q * 14) / 4, 0) / (0.2 + joltRate[joltIndex] / 20);
-        ctx2.fillStyle = "rgba(0,0,0,0.12)";
-        ctx2.beginPath();
-        ctx2.ellipse(0, 0, W * 0.7 * (1 - 5 * jump), W * 0.3 * (1 - 4 * jump), 0, 0, 6.28);
-        ctx2.fill();
-        ctx2.translate(0, -3);
-        ctx2.rotate(pivotAngle);
-        ctx2.translate(0, 3 - jump * 110);
-        const panim = anim - 3;
-        if (panim >= 0) {
-          for (let i = 0; i < 10; i++) {
-            retainTransform(() => {
-              const dh = -((panim + Math.cos(panim * 4 + i * 0.4) * 0.04 + i * 0.73 + 10) % 0.5) * 8;
-              const dx = Math.sin(i * 2 + i * i * 7) * 1 + 0.7;
-              ctx2.lineWidth = Math.max(0.5 / (1 - dh / 8) * Math.min(Math.max(3 - panim, 0), 1), 1e-3);
-              ctx2.strokeStyle = TEAL;
-              ctx2.beginPath();
-              ctx2.moveTo(-W * 0.4 + dx, -H + dh);
-              ctx2.lineTo(-W * 0.4 + dx, -H + dh + 0.01);
-              ctx2.stroke();
-            });
-          }
-        }
-        if (panim >= 0) {
-          for (let i = 0; i < 3; i++) {
-            retainTransform(() => {
-              const dh = -panim * 18 + i * 2 + 1;
-              const dx = Math.sin(i * 2) * panim * 1.5 + 0.5;
-              ctx2.lineWidth = 0.4;
-              ctx2.strokeStyle = WHITE;
-              ctx2.beginPath();
-              ctx2.moveTo(-W * 0.4 + Math.cos(panim * 16 + i) * 0.2 + dx, -H * 0.8 + dh);
-              ctx2.bezierCurveTo(-W * 0.4 + Math.cos(panim * 16 + 1.5 + i) * 0.3 + dx, -H * 0.9 + dh, -W * 0.4 + Math.cos(panim * 16 + 3 + i) * 0.4 + dx, -H * 1 + dh, -W * 0.4 + Math.cos(panim * 16 + 4.5 + i) * 0.5 + dx, -H * 1.1 + dh);
-              ctx2.stroke();
-            });
-          }
-        }
-        ctx2.lineWidth = 1;
-        ctx2.strokeStyle = LIGHT_GRAY;
-        ctx2.beginPath();
-        if (anim > 3.05) {
-          ctx2.moveTo(-W * 0.3, -H - 0.3);
-          ctx2.lineTo(-W * 0.06, -H - 1.2);
-        } else {
-          ctx2.moveTo(-W * 0.3, -H - 0.4);
-          ctx2.lineTo(0, -H - 0.4);
-        }
-        ctx2.closePath();
-        ctx2.stroke();
-        ctx2.lineWidth = 1;
-        ctx2.strokeStyle = DARK_BLUE;
-        ctx2.fillStyle = DARK_BLUE;
-        ctx2.beginPath();
-        ctx2.moveTo(-W / 2, 0);
-        ctx2.lineTo(-W / 2, -H);
-        ctx2.lineTo(W / 2, -H);
-        ctx2.lineTo(W / 2, 0);
-        ctx2.closePath();
-        ctx2.stroke();
-        ctx2.fill();
-        ctx2.lineWidth = 0.2;
-        ctx2.strokeStyle = TEAL;
-        ctx2.fillStyle = TEAL;
-        ctx2.beginPath();
-        ctx2.moveTo(-W / 2 - 0.4, -H * 0.2);
-        ctx2.lineTo(-W / 2 - 0.4, -H * 0.7);
-        ctx2.lineTo(W / 2 + 0.4, -H * 0.7);
-        ctx2.lineTo(W / 2 + 0.4, -H * 0.2);
-        ctx2.closePath();
-        ctx2.stroke();
-        ctx2.fill();
-        ctx2.font = "0.8px monospace";
-        ctx2.fillStyle = WHITE;
-        const textWidth = ctx2.measureText("SOULA COLA").width;
-        const xOffset = -textWidth / 2;
-        ctx2.fillText("SOULA COLA", xOffset, -H * 0.85);
-        ctx2.lineWidth = 0.2;
-        ctx2.strokeStyle = BLUE;
-        ctx2.fillStyle = BLUE;
-        ctx2.beginPath();
-        ctx2.moveTo(0, -H * 0.6);
-        ctx2.lineTo(-H * 0.1, -H * 0.5);
-        ctx2.lineTo(0, -H * 0.4);
-        ctx2.lineTo(H * 0.1, -H * 0.5);
-        ctx2.closePath();
-        ctx2.stroke();
-        ctx2.fill();
-        ctx2.font = "0.5px monospace";
-        ctx2.fillStyle = BLACK;
-        const label = "Unholy Snake Venom";
-        const textWidth2 = ctx2.measureText(label).width;
-        const xOffset2 = -textWidth2 / 2;
-        ctx2.fillText(label, xOffset2, -H * 0.27);
-        if (joltTime < 0.2) {
-          const jt = joltTime / 0.2;
-          const ar = 1 + jt * 3;
-          const br = 3 + jt;
-          ctx2.lineWidth = 0.3;
-          ctx2.strokeStyle = WHITE;
-          ctx2.beginPath();
-          ctx2.moveTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1) * ar, -H + Math.sin(joltIndex * 4 + 1) * ar);
-          ctx2.lineTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1) * br, -H + Math.sin(joltIndex * 4 + 1) * br);
-          ctx2.moveTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1.5) * ar, -H + Math.sin(joltIndex * 4 + 1.5) * ar);
-          ctx2.lineTo(-W * 0.4 + Math.cos(joltIndex * 4 + 1.5) * br, -H + Math.sin(joltIndex * 4 + 1.5) * br);
-          ctx2.stroke();
-        }
-      });
-    }
-    function update(dT) {
-      anim = window.sodaAudio.currentTime;
-      joltTime += dT;
-      if (joltIndex == joltTiming.length - 1 && anim < 0.5) {
-        joltIndex = 0;
-      }
-      const targetAnimTime = joltTiming[joltIndex];
-      if (anim >= targetAnimTime) {
-        joltHeight = Math.random() * 0.1 + 0.1;
-        joltAngle = 0.25;
-        if (joltIndex % 2 == 0) {
-          joltAngle *= -1;
-        }
-        joltTime = 0;
-        joltIndex += 1;
-      }
-      self.order = 50 + cy / 100;
-    }
-    function getX() {
-      return cx;
-    }
-    function getY() {
-      return cy;
-    }
-    self = {
-      update,
-      render,
-      getX,
-      getY,
-      tags: ["soda"],
-      order: -199
-    };
-    return self;
-  }
-  var soda_default2 = Soda;
-
   // src/camera.js
+  var MODE2 = {
+    GRIM: 0,
+    SODA: 1
+  };
   function Camera() {
     let self;
-    let tweenTime;
+    let tweenTime = 0;
+    let modeTime = 0;
+    let mode = MODE2.GRIM;
     function render(ctx2) {
-      let tweenP = 1 - tweenTime;
-      let tweenQ = tweenTime;
+      let tweenP = Math.min(Math.max(1 - tweenTime, 0), 1);
+      let tweenQ = Math.min(Math.max(tweenTime, 0), 1);
       const grim = getObjectsByTag("grim")[0];
       if (grim) {
         ctx2.translate(-grim.getX() * 0.4 * tweenP, -grim.getY() * 0.4 * tweenP);
@@ -1270,19 +1635,57 @@
         } else {
           s = 3 * 4 - (1 - Math.exp(-(t - 3) * 4)) * 25;
         }
-        ctx2.scale(1 + (44 + s) * tweenQ, 1 + (44 + s) * tweenQ);
+        ctx2.scale(1 + (40 + s) * tweenQ, 1 + (40 + s) * tweenQ);
         ctx2.translate(0, 5 * tweenQ);
       }
     }
     function update(dT) {
-      if (tweenTime < 1) {
-        tweenTime += dT;
+      if (mode == MODE2.SODA) {
+        modeTime += dT;
+        if (tweenTime < 1) {
+          tweenTime += dT * 0.4;
+        }
+        const grim = getObjectsByTag("grim")[0];
+        if (grim) {
+          if (grim.getX() < 0) {
+            grim.setTargetPose(-42, 0, 1);
+          } else {
+            grim.setTargetPose(42, 0, -1);
+          }
+        }
+        if (modeTime > 7) {
+          mode = MODE2.GRIM;
+          tweenTime = 1;
+          setTimeout(() => {
+            endSodaAnimation();
+          }, 3e3);
+        }
       }
+      if (mode == MODE2.GRIM) {
+        modeTime += dT;
+        if (tweenTime > 0) {
+          tweenTime -= dT * 0.4;
+        }
+      }
+    }
+    function endSodaAnimation() {
+      add(new hex_particle_default(0, 0, -1));
+      emit("spawn-souls");
+      for (let i = 0; i < 1; i++) {
+        add(new soul_default((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80));
+      }
+      remove(getObjectsByTag("soda"));
     }
     function onConsume({ emote }) {
       if (emote == EMOTE.SOULA_COLA) {
         tweenTime = 0;
-        emit("soda-pop");
+        modeTime = 0;
+        setTimeout(() => {
+          mode = MODE2.SODA;
+        }, 500);
+        setTimeout(() => {
+          emit("soda-pop");
+        }, 1500);
       }
     }
     on("consume", onConsume);
@@ -1307,7 +1710,7 @@
     add(new arena_default());
     add(new soul_manager_default());
     add(new interaction_default());
-    add(new grim_default(-40, 0));
+    add(new grim_default(-150, 0));
     add(new gateway_default(0, 0, EMOTE.SOULA_COLA, "SOLUKI"));
     add(new soda_default2(0, 0));
     audio_default().init();

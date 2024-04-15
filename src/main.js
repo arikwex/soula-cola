@@ -18,7 +18,7 @@ function initialize() {
     add(new Arena());
     add(new SoulManager());
     add(new Interaction());
-    add(new Grim(-40, 0));
+    add(new Grim(-150, 0));
     add(new Gateway(0, 0, EMOTE.SOULA_COLA, 'SOLUKI'));
     add(new Soda(0, 0));
     // for (let i = 0; i < 5; i++) {

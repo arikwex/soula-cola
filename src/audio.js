@@ -30,7 +30,6 @@ function AudioEngine() {
 
     // Global is laziness, but the soda animation is time-matched to the audio playback
     window.sodaAudio = sodaAudio;
-    window.sodaAudio.loop = true;
     walkingAudio.loop = true;
     meepAudio.preservesPitch = false;
 
@@ -57,6 +56,7 @@ function AudioEngine() {
         bus.on('consume', () => { transcendAudio.currentTime = 0; transcendAudio.play(); });
         bus.on('level-clear', () => { transcendAudio.currentTime = 0; transcendAudio.play(); });
         bus.on('spawn-gateway', () => { skylightAudio.currentTime = 0; skylightAudio.play(); });
+        bus.on('spawn-souls', () => { skylightAudio.currentTime = 0; skylightAudio.play(); });
         bus.on('player-moving', () => { walkingAudio.play(); });
         bus.on('player-stopped', () => { walkingAudio.pause(); });
         bus.on('exploded', () => { popAudio.currentTime = 0; popAudio.play(); });

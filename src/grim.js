@@ -206,6 +206,12 @@ function Grim(x, y) {
 
     function getX() { return x; }
     function getY() { return y; }
+    function setTargetPose(tx, ty, tvx) {
+        x = tx * 0.05 + x * 0.95;
+        y = ty * 0.05 + y * 0.95;
+        vx = tvx;
+        vy = 0;
+    }
 
     self = {
         update,
@@ -213,6 +219,7 @@ function Grim(x, y) {
         onRemove,
         getX,
         getY,
+        setTargetPose,
         tags: ['grim', 'hitbox'],
         order: 50,
     };
