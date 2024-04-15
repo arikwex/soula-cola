@@ -1,13 +1,16 @@
 HITLIST
 =======
-- Drink Soula Cola to summon a bunch of souls
+- Soda auto-name / auto-color
+- Soul manager behavior / level progress / layout to match soda type / word difficulty
+- Game Over / Reset
+
+Nice to have:
+- Visual for mis-type
+- "meep meep meep" in desperation for their desires
+- Main menu
+- Themed font (monospace?)
 - Audio + Music
     - soul spawn sound
     - soul angry
     - soul stepping on to active region
     - Ambient pad synth drag set beat => inspired by babayaga groove and howling riff
-- Soul manager behavior / level progress / layout to match soda type / word difficulty
-- Visual for mis-type
-- "meep meep meep" in desperation for their desires
-- Main menu
-- Themed font (monospace?)

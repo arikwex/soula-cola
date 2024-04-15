@@ -11,6 +11,18 @@ function Soda(cx, cy) {
     const joltTiming = [0.1, 0.73, 1.15, 1.53, 1.9, 2.1, 2.3, 2.45, 2.55, 2.7, 2.8, 2.9, 3.0, 3.1, 1000];
     const joltRate =   [8,   8,    8,    8,    10,  12,  14,  16,   16,   16,  16,  16,  16,  16,  17];
     let joltIndex = 0;
+    
+    function generateLabel() {
+        function randomSelection(a) {
+            return a[Math.floor(Math.random() * a.length)];
+        }
+        // "Unholy Snake Venom";
+        const first = ['Holy', 'Unholy', 'Cursed', 'Forsaken', 'Wretched', 'Evil'];
+        const second = ['Snake', 'Apple', 'Lemon', 'Cherry', 'Chocolate', 'Coffee', 'Acid'];
+        const third = ['Venom', 'Bile', 'Tea', 'Beer', 'Bones', 'Blood', 'Nectar', 'Seltzer'];
+        return randomSelection(first) + " " + randomSelection(second) + " " + randomSelection(third);
+    }
+    const label = generateLabel();
 
     function render(ctx) {
         retainTransform(() => {
@@ -129,7 +141,6 @@ function Soda(cx, cy) {
             // Label
             ctx.font = "0.5px monospace";
             ctx.fillStyle = BLACK;
-            const label = "Unholy Snake Venom";
             const textWidth2 = ctx.measureText(label).width;
             const xOffset2 = -textWidth2 / 2;
             ctx.fillText(label, xOffset2, -H * 0.27);
