@@ -183,10 +183,12 @@ function Grim(x, y) {
     }
 
     function onKeyDown(evt) {
+        evt.preventDefault();
         keys[evt.key] = true;
     }
 
     function onKeyUp(evt) {
+        evt.preventDefault();
         keys[evt.key] = false;
     }
 

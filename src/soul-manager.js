@@ -161,7 +161,7 @@ function SoulManager() {
         if (gameOver) {
             return;
         }
-        
+
         // Run processing tick once per second
         tick += dT;
         if (tick < 1) {
@@ -187,7 +187,7 @@ function SoulManager() {
 
         // Logic for gateway spawn
         if (gameMode == MODE.PLAYING) {
-            if (numSouls > 0 && getNumGateways() < availableEmotes.length && Math.random() > 0.75) {
+            if (numSouls > 0 && getNumGateways() < availableEmotes.length && Math.random() > 0.5) {
                 spawnRandomGateway();
             }
             if (numSouls == 0) {
