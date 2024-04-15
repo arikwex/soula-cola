@@ -61,6 +61,7 @@ function AudioEngine() {
         bus.on('player-stopped', () => { walkingAudio.pause(); });
         bus.on('exploded', () => { popAudio.currentTime = 0; popAudio.play(); });
         bus.on('assign-emote', () => { meepAudio.currentTime = 0; meepAudio.playbackRate=Math.random()*0.4+1.0; meepAudio.play(); });
+        bus.on('game-over', () => { badTapAudio.currentTime = 0; badTapAudio.play(); });
     }
 
     return {
@@ -68,4 +69,6 @@ function AudioEngine() {
     }
 }
 
-export default AudioEngine;
+const instance = new AudioEngine();
+
+export default instance;

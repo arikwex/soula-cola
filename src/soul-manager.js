@@ -18,6 +18,7 @@ function SoulManager() {
     let gatewayHistory = [];
     let gameMode = MODE.NEED_COLA;
     let level = 0;
+    let gameOver = false;
 
     function assignSoulEmote(soul, emote) {
         if (soul == null) {
@@ -157,6 +158,10 @@ function SoulManager() {
     }
 
     function update(dT) {
+        if (gameOver) {
+            return;
+        }
+        
         // Run processing tick once per second
         tick += dT;
         if (tick < 1) {
@@ -218,11 +223,17 @@ function SoulManager() {
         }
     }
 
+    function onGG() {
+        gameOver = true;
+    }
+
     bus.on('soda-pop', onSodaPop);
     bus.on('spawn-souls', onSpawnSouls);
+    bus.on('game-over', onGG);
     function onRemove() {
         bus.off('soda-pop', onSodaPop);
         bus.off('spawn-souls', onSpawnSouls);
+        bus.off('game-over', onGG);
     }
 
     return {

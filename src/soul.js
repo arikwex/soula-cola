@@ -320,11 +320,22 @@ function Soul(x, y) {
         }
     }
 
+    function onGG() {
+        setTimeout(() => {
+            add(new PoofParticle(x, y-20*HEIGHT/2));
+            setTimeout(() => {add(new PoofParticle(x, y-20*HEIGHT/2));}, Math.random() * 100 + 50);
+            bus.emit('exploded');
+            remove([self]);
+        }, Math.random() * 4000 + 1000);
+    }
+
     bus.on('assign-emote', onAssignEmote);
     bus.on('consume', onConsume);
+    bus.on('game-over', onGG);
     function onRemove() {
         bus.off('assign-emote', onAssignEmote);
         bus.off('consume', onConsume);
+        bus.off('game-over', onGG);
     }
 
     self = {

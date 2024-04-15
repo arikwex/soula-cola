@@ -6,9 +6,18 @@ import { EMOTE } from "./emote-enum";
 function HUD(cx, cy, emote) {
     let freed = 0;
     let allowance = 5;
+    let gameOver = false;
 
     function render(ctx) {
         retainTransform(() => {
+            if (gameOver) {
+                ctx.setTransform(1, 0, 0, 1, 50, 70);
+                ctx.font = "64px monospace";
+                ctx.fillStyle = WHITE;
+                ctx.fillText("GAME OVER", 80, 200);
+                ctx.fillText("[Enter] to refresh", 80, 280);
+            }
+
             // Freed soul counter
             ctx.setTransform(1, 0, 0, 1, 50, 70);
             renderSoul(ctx);
@@ -94,13 +103,25 @@ function HUD(cx, cy, emote) {
 
     function onExploded() {
         allowance = Math.max(allowance - 1, 0);
+        if (allowance == 0 && !gameOver) {
+            bus.emit('game-over');
+            gameOver = true;
+        }
+    }
+
+    function onKeyDown(evt) {
+        if (gameOver && evt.key == 'Enter') {
+            window.location.reload();
+        }
     }
 
     bus.on('consume-success', onConsumeSuccess);
     bus.on('exploded', onExploded);
+    window.addEventListener('keydown', onKeyDown);
     function onRemove() {
         bus.off('consume-success', onConsumeSuccess);
         bus.off('exploded', onExploded);
+        window.removeEventListener('keydown', onKeyDown);
     }
 
     return {

@@ -1,6 +1,5 @@
 HITLIST
 =======
-- Soul manager behavior / level progress / layout to match soda type / word difficulty
 - Game Over / Reset
 
 Nice to have:

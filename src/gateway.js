@@ -141,9 +141,16 @@ function Gateway(cx, cy, emote, challengeWord) {
         remove([self]);
     }
 
+    function onGG() {
+        add(new HexParticle(cx, cy, emote));
+        remove([self]);
+    }
+
     bus.on('level-clear', onLevelClear);
+    bus.on('game-over', onGG);
     function onRemove() {
         bus.off('level-clear', onLevelClear);
+        bus.off('game-over', onGG);
     }
 
     self = {
