@@ -32,6 +32,27 @@ function Soda(cx, cy) {
             ctx.translate(0, -3);
             ctx.rotate(pivotAngle);
             ctx.translate(0, 3 - jump * 110);
+            const panim = anim - 3.0;
+
+            // Zaps
+
+            // Bubbles
+
+            // Fumes
+            if (panim >= 0) {
+                for (let i = 0; i < 3; i++) {
+                    retainTransform(() => {
+                        const dh = -panim * 15 + i * 2+1;
+                        const dx = Math.sin(i * 2) * panim * 1.5+0.5;
+                        ctx.lineWidth = 0.4;
+                        ctx.strokeStyle = WHITE;
+                        ctx.beginPath();
+                        ctx.moveTo(-W*0.4+Math.cos(panim*16+i) * 0.2+dx, -H*0.8+dh);
+                        ctx.bezierCurveTo(-W*0.4+Math.cos(panim*16+1.5+i)*0.3+dx, -H*0.9+dh, -W*0.4+Math.cos(panim*16+3+i)*0.4+dx, -H*1.0+dh, -W*0.4+Math.cos(panim*16+4.5+i) * 0.5+dx, -H*1.1+dh);
+                        ctx.stroke();
+                    });
+                }
+            }
 
             // Can Tab
             ctx.lineWidth = 1;
@@ -100,6 +121,8 @@ function Soda(cx, cy) {
             const textWidth2 = ctx.measureText(label).width;
             const xOffset2 = -textWidth2 / 2;
             ctx.fillText(label, xOffset2, -H * 0.27);
+
+            
         });
     }
 

@@ -16,12 +16,13 @@ function Camera() {
             ctx.translate(-soda.getX(), -soda.getY());
             let s = 0;
             let t = window.sodaAudio.currentTime;
-            if (t < 3.1) {
+            if (t < 3.0) {
                 s = t * 4;
             } else {
-                s = 3.1*4 - (1.0 - Math.exp(-(t-3.1) * 4)) * 25;
+                s = 3.0*4 - (1.0 - Math.exp(-(t-3.0) * 4)) * 25;
             }
             ctx.scale(45 + s, 45 + s);
+            // ctx.scale(45, 45);
             ctx.translate(0, 5);
         }
     }

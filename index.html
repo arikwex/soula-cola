@@ -1115,6 +1115,21 @@
         ctx2.translate(0, -3);
         ctx2.rotate(pivotAngle);
         ctx2.translate(0, 3 - jump * 110);
+        const panim = anim - 3;
+        if (panim >= 0) {
+          for (let i = 0; i < 3; i++) {
+            retainTransform(() => {
+              const dh = -panim * 15 + i * 2 + 1;
+              const dx = Math.sin(i * 2) * panim * 1.5 + 0.5;
+              ctx2.lineWidth = 0.4;
+              ctx2.strokeStyle = WHITE;
+              ctx2.beginPath();
+              ctx2.moveTo(-W * 0.4 + Math.cos(panim * 16 + i) * 0.2 + dx, -H * 0.8 + dh);
+              ctx2.bezierCurveTo(-W * 0.4 + Math.cos(panim * 16 + 1.5 + i) * 0.3 + dx, -H * 0.9 + dh, -W * 0.4 + Math.cos(panim * 16 + 3 + i) * 0.4 + dx, -H * 1 + dh, -W * 0.4 + Math.cos(panim * 16 + 4.5 + i) * 0.5 + dx, -H * 1.1 + dh);
+              ctx2.stroke();
+            });
+          }
+        }
         ctx2.lineWidth = 1;
         ctx2.strokeStyle = LIGHT_GRAY;
         ctx2.beginPath();
@@ -1218,10 +1233,10 @@
         ctx2.translate(-soda.getX(), -soda.getY());
         let s = 0;
         let t = window.sodaAudio.currentTime;
-        if (t < 3.1) {
+        if (t < 3) {
           s = t * 4;
         } else {
-          s = 3.1 * 4 - (1 - Math.exp(-(t - 3.1) * 4)) * 25;
+          s = 3 * 4 - (1 - Math.exp(-(t - 3) * 4)) * 25;
         }
         ctx2.scale(45 + s, 45 + s);
         ctx2.translate(0, 5);
