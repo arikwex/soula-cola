@@ -2,9 +2,17 @@ import { retainTransform } from "./canvas";
 import { BLUE, GRAY, GREEN, LIGHT_GRAY, ORANGE, PURPLE, RED, TAN, WHITE, YELLOW } from "./color";
 import { EMOTE } from "./emote-enum";
 
-function Gateway(cx, cy, emote) {
+function Gateway(cx, cy, emote, challengeWord) {
     let activeTimer = 0;
     let spawningAnim = 0;
+    let resolved = false;
+    let msg = null;
+    try {
+        msg = new SpeechSynthesisUtterance();
+        msg.text = challengeWord.toUpperCase();
+        msg.lang = 'ro';
+        msg.pitch = 0.0;
+    } catch {}
 
     function render(ctx) {
         retainTransform(() => {
@@ -127,7 +135,15 @@ function Gateway(cx, cy, emote) {
     function getX() { return cx; }
     function getY() { return cy; }
     function getEmote() { return emote; }
-    function getCurrentWord() { return "QWE"; }
+    function getCurrentWord() { return challengeWord; }
+    function resolve() { 
+        resolved = true; 
+        try { 
+            msg.lang = 'ro';
+            window.speechSynthesis.speak(msg);
+        } catch{}
+    }
+    function isResolved() { return resolved; }
 
     return {
         update,
@@ -135,6 +151,8 @@ function Gateway(cx, cy, emote) {
         inRegion,
         isTooCloseToGate,
         refreshActive,
+        resolve,
+        isResolved,
         getX,
         getY,
         getEmote,

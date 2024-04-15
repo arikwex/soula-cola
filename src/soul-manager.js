@@ -101,7 +101,35 @@ function SoulManager() {
                 break;
             }
         }
-        add(new Gateway(sx, sy, emote));
+        add(new Gateway(sx, sy, emote, generateChallengeWord()));
+    }
+
+    function randomSelection(a) {
+        return a[Math.floor(Math.random() * a.length)];
+    }
+
+    function generateChallengeWord() {
+        const difficulty = 2;
+        const starterVowels = ['A','E','I','O','U'];
+        const syllabs = [
+            ['BA', 'CA', 'CHA', 'FA', 'GA', 'HA', 'JA', 'KA', 'LA', 'MA', 'NA', 'PA', 'QA','RA', 'SA', 'SHA', 'TA', 'THA', 'VA', 'XA', 'ZA'],
+            ['BE', 'FE', 'DE', 'GE', 'HE', 'JE', 'KE', 'LE', 'ME', 'NE', 'PE', 'QE' ,'RE', 'SE', 'SHE', 'TE', 'THE', 'VE', 'XE', 'ZE'],
+            ['BI', 'CHI', 'DI', 'FI', 'JI', 'KI', 'LI', 'MI', 'QI', 'RI', 'SI', 'SHI', 'TI', 'THI', 'VI', 'XI'],
+            ['BO', 'CO', 'CHO', 'JO', 'KO', 'LO', 'MO', 'NO', 'QO','RO', 'SO', 'SHO', 'TO', 'THO', 'VO', 'WO', 'XO'],
+            ['BU', 'CU', 'DU', 'GU', 'HU', 'KU', 'LU', 'MU', 'NU', 'QU', 'RU', 'SU', 'SHU', 'TU', 'THU', 'VU', 'XU', 'ZU'],
+        ];
+        const consonants = ['B', 'F', 'G', 'H', 'K', 'L', 'M', 'N', 'P', 'Q', 'S', 'T', 'V', 'Z']
+        let word = "";
+        if (Math.random() > 0.9) {
+            word += randomSelection(starterVowels);
+        }
+        for (let i = 0; i < difficulty; i++) {
+            word += randomSelection(randomSelection(syllabs));
+            if (Math.random() > 0.8) {
+                word += randomSelection(consonants);
+            }
+        }
+        return word.toUpperCase();
     }
 
     function render(ctx) {

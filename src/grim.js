@@ -159,7 +159,7 @@ function Grim(x, y) {
         const interaction = getObjectsByTag('interaction')[0];
         let hasGateway = false;
         for (let i = 0; i < gateways.length; i++) {
-            if (gateways[i].inRegion(x, y)) {
+            if (gateways[i].inRegion(x, y) && !gateways[i].isResolved()) {
                 hasGateway = true;
                 interaction.setGateway(gateways[i]);
                 break;

@@ -622,7 +622,7 @@
       const interaction = getObjectsByTag("interaction")[0];
       let hasGateway = false;
       for (let i = 0; i < gateways.length; i++) {
-        if (gateways[i].inRegion(x, y)) {
+        if (gateways[i].inRegion(x, y) && !gateways[i].isResolved()) {
           hasGateway = true;
           interaction.setGateway(gateways[i]);
           break;
@@ -933,7 +933,6 @@
         hunger += dT * 0.05;
         if (hunger < 1) {
           hungerAnim = 0;
-          hunger = 1;
         }
         if (hunger > 1) {
           hungerAnim += dT * (hunger - 1) * 45;
@@ -1012,9 +1011,18 @@
   var soul_default = Soul;
 
   // src/gateway.js
-  function Gateway(cx, cy, emote) {
+  function Gateway(cx, cy, emote, challengeWord) {
     let activeTimer = 0;
     let spawningAnim = 0;
+    let resolved = false;
+    let msg = null;
+    try {
+      msg = new SpeechSynthesisUtterance();
+      msg.text = challengeWord.toUpperCase();
+      msg.lang = "ro";
+      msg.pitch = 0;
+    } catch {
+    }
     function render(ctx2) {
       retainTransform(() => {
         if (spawningAnim > 0.5) {
@@ -1139,7 +1147,18 @@
       return emote;
     }
     function getCurrentWord() {
-      return "QWE";
+      return challengeWord;
+    }
+    function resolve() {
+      resolved = true;
+      try {
+        msg.lang = "ro";
+        window.speechSynthesis.speak(msg);
+      } catch {
+      }
+    }
+    function isResolved() {
+      return resolved;
     }
     return {
       update,
@@ -1147,6 +1166,8 @@
       inRegion,
       isTooCloseToGate,
       refreshActive,
+      resolve,
+      isResolved,
       getX,
       getY,
       getEmote,
@@ -1245,7 +1266,33 @@
           break;
         }
       }
-      add(new gateway_default(sx, sy, emote));
+      add(new gateway_default(sx, sy, emote, generateChallengeWord()));
+    }
+    function randomSelection(a) {
+      return a[Math.floor(Math.random() * a.length)];
+    }
+    function generateChallengeWord() {
+      const difficulty = 2;
+      const starterVowels = ["A", "E", "I", "O", "U"];
+      const syllabs = [
+        ["BA", "CA", "CHA", "FA", "GA", "HA", "JA", "KA", "LA", "MA", "NA", "PA", "QA", "RA", "SA", "SHA", "TA", "THA", "VA", "XA", "ZA"],
+        ["BE", "FE", "DE", "GE", "HE", "JE", "KE", "LE", "ME", "NE", "PE", "QE", "RE", "SE", "SHE", "TE", "THE", "VE", "XE", "ZE"],
+        ["BI", "CHI", "DI", "FI", "JI", "KI", "LI", "MI", "QI", "RI", "SI", "SHI", "TI", "THI", "VI", "XI"],
+        ["BO", "CO", "CHO", "JO", "KO", "LO", "MO", "NO", "QO", "RO", "SO", "SHO", "TO", "THO", "VO", "WO", "XO"],
+        ["BU", "CU", "DU", "GU", "HU", "KU", "LU", "MU", "NU", "QU", "RU", "SU", "SHU", "TU", "THU", "VU", "XU", "ZU"]
+      ];
+      const consonants = ["B", "F", "G", "H", "K", "L", "M", "N", "P", "Q", "S", "T", "V", "Z"];
+      let word = "";
+      if (Math.random() > 0.9) {
+        word += randomSelection(starterVowels);
+      }
+      for (let i = 0; i < difficulty; i++) {
+        word += randomSelection(randomSelection(syllabs));
+        if (Math.random() > 0.8) {
+          word += randomSelection(consonants);
+        }
+      }
+      return word.toUpperCase();
     }
     function render(ctx2) {
     }
@@ -1441,9 +1488,13 @@
           pulse = 0;
           add(new letter_particle_default(cx, cy, nextLetterText));
           if (numFilled == text.length) {
-            emit("consume", { gateway: activeGateway, emote: activeGateway.getEmote() });
-            add(new hex_particle_default(activeGateway.getX(), activeGateway.getY(), activeGateway.getEmote()));
-            remove([activeGateway]);
+            activeGateway.resolve();
+            SG = activeGateway;
+            setTimeout(() => {
+              emit("consume", { gateway: SG, emote: SG.getEmote() });
+              add(new hex_particle_default(SG.getX(), SG.getY(), SG.getEmote()));
+              remove([SG]);
+            }, 500);
             activeGateway = null;
           } else {
             updateFilledText();

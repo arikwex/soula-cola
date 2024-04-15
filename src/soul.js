@@ -260,7 +260,6 @@ function Soul(x, y) {
             hunger += dT * 0.05;
             if (hunger < 1) {
                 hungerAnim = 0;
-                hunger = 1;
             }
             if (hunger > 1) {
                 hungerAnim += dT * (hunger - 1) * 45;

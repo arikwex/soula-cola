@@ -1,12 +1,22 @@
 HITLIST
 =======
-- Freed spirit counter
-- Exploded spirit counter
+- Summoning word generator
 - Drink Soula Cola to summon a bunch of souls
 - THE Soda Animation
-- Soul manager behavior / level progress / layout to match soda type
+- Soul manager behavior / level progress / layout to match soda type / word difficulty
 - Audio + Music
 - Visual for mis-type
 - "meep meep meep" in desperation for their desires
 - Main menu
 - Themed font (monospace?)
+
+A,E,I,O,U
+BA, CA, KA,
+SE
+BO
+ZO
+KO
+LO
+
+ME
+ME

@@ -89,9 +89,13 @@ function Interaction() {
                 pulse = 0;
                 add(new LetterParticle(cx, cy, nextLetterText));
                 if (numFilled == text.length) {
-                    bus.emit('consume', { gateway: activeGateway, emote: activeGateway.getEmote() });
-                    add(new HexParticle(activeGateway.getX(), activeGateway.getY(), activeGateway.getEmote()))
-                    remove([activeGateway]);
+                    activeGateway.resolve();
+                    SG = activeGateway;
+                    setTimeout(() => {
+                        bus.emit('consume', { gateway: SG, emote: SG.getEmote() });
+                        add(new HexParticle(SG.getX(), SG.getY(), SG.getEmote()));
+                        remove([SG]);
+                    }, 500);
                     activeGateway = null;
                 } else {
                     updateFilledText();
